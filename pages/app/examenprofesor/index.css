@@ -1,0 +1,62 @@
+.examenprofeor-container table {
+  width: calc(100% - 84px);
+  margin: 0 42px;
+  border: 1px solid #192041;
+}
+
+.examenprofeor-container th,
+.examenprofeor-container td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: start;
+}
+
+.examenprofeor-container th {
+  background-color: #f2f2f2;
+}
+
+.examenprofeor-container .app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 50px;
+}
+
+.examenprofeor-container .dropdown-select {
+  width: 640px;
+  height: 60px;
+  padding: 5px;
+  font-size: 16px;
+  border: 1px solid #192041;
+  border-radius: 5px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.examenprofeor-container .save-button {
+  width: 640px;
+  height: 64px;
+  background-color: #192041;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.examenprofeor-container .save-button:hover {
+  background-color: #0009bb;
+}
+
+.examenprofeor-container .save-button:disabled {
+  background-color: #b0b0b0;
+  cursor: not-allowed;
+}
+
+.examenprofeor-container .dropdown-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}

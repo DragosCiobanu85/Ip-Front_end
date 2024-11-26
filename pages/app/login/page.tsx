@@ -1,12 +1,22 @@
+// acest cod este pentru Desktop 2 din figma
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import {useState} from "react";
+import {useRouter} from "next/navigation";
+import * as React from "react";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const router = useRouter();
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,32 +45,131 @@ export default function Login() {
 
   return (
     <>
-      <h1>This is the login page</h1>
+      <title>Programare examene</title>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          textAlign: "center",
+        }}>
+        <h1
+          style={{
+            fontSize: "2rem",
+            fontWeight: "bold",
+            color: "#333",
+            marginTop: "80px",
+            marginBottom: "18px",
+          }}>
+          Programare examene
+        </h1>
+
+        <h1
+          style={{
+            fontSize: "2rem",
+            fontWeight: "bold",
+            color: "#333",
+            marginTop: "6px",
+            marginBottom: "0px",
+          }}>
+          Sesiunea ordinara nr. 1
+        </h1>
+        <h1
+          style={{
+            fontSize: "2rem",
+            fontWeight: "bold",
+            color: "#333",
+
+            marginTop: "2px",
+          }}>
+          An universitar 2024-2025
+        </h1>
+      </div>
+
       <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Email:</label>
-          <input
-            type="email"
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            textAlign: "center",
+          }}>
+          <TextField
             id="email"
-            name="email"
+            label="Email"
+            variant="outlined"
+            type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleEmailChange}
             required
+            error={!!emailError}
+            helperText={emailError}
+            style={{marginBottom: "20px", marginTop: "40px", width: "300px"}}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "#192041",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#192041",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#192041",
+                },
+              },
+            }}
           />
-          {emailError && <p style={{ color: "red" }}>{emailError}</p>} {}
         </div>
-        <div>
-          <label htmlFor="password">Password:</label>
-          <input
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            textAlign: "center",
+          }}>
+          <TextField
+            id="outlined-basic"
+            label="Password"
+            variant="outlined"
             type="password"
-            id="password"
-            name="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "#192041",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#192041",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#192041",
+                },
+              },
+            }}
+            style={{width: "300px", marginBottom: "17px"}}
           />
         </div>
-        <button type="submit">Log in</button>
+        <Button
+          variant="contained"
+          type="submit"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            textAlign: "center",
+            margin: "0 auto",
+            marginTop: "20px",
+            backgroundColor: "#192041",
+            width: "300px",
+          }}>
+          Login
+        </Button>
       </form>
     </>
   );
