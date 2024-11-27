@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import * as React from "react";
 import { useState } from "react";
@@ -15,6 +16,8 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import { Exam, useExams } from "../context/examcontext";
+import { useRouter } from "next/navigation";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -36,47 +39,27 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-function createData(
-  id: number,
-  name: string,
-  dataexamen: Date,
-  sala: string,
-  ora: number
-) {
-  const formattedDate = dataexamen.toLocaleDateString();
-  return { id, name, formattedDate, sala, ora };
-}
-
 export default function StudentAccount() {
-  const [rows, setRows] = useState([
-    createData(1, "Fizica 1", new Date("2024-12-01"), "Sala 101", 12),
-    createData(
-      2,
-      "Matematici speciale",
-      new Date("2024-01-14"),
-      "Sala 202",
-      14
-    ),
-    createData(3, "PCLP1", new Date("2024-01-20"), "Sala 101", 12),
-    createData(4, "POO", new Date("2024-01-22"), "Sala 202", 14),
-    createData(5, "Analiza matematica", new Date("2024-01-26"), "Sala 101", 12),
-    createData(6, "Proiectare logica", new Date("2024-01-28"), "Sala 202", 14),
-    createData(
-      7,
-      "Proiectare interfete utlizator",
-      new Date("2024-01-30"),
-      "Sala 101",
-      12
-    ),
-    createData(8, "Fizica 2", new Date("2024-02-02"), "Sala 202", 14),
-  ]);
-
+  const { studentExams, removeExamFromStudent, removeExamFromTeacher } =
+    useExams();
+  const [rows, setRows] = useState(studentExams);
   const [openDialog, setOpenDialog] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
+  const router = useRouter();
+
   const handleCancel = (id: number) => {
-    setRows((prevRows) => prevRows.filter((row) => row.id !== id));
+    removeExamFromStudent(id);
+    removeExamFromTeacher(id);
+
+    setRows((prevRows) => prevRows.filter((exam) => exam.id !== id));
+
     setCancelMessage("Examenul a fost anulat!");
     setOpenDialog(true);
+  };
+
+  const handleModifyClick = (exam: Exam) => {
+    const queryParams = `?exam=${encodeURIComponent(JSON.stringify(exam))}`;
+    router.push(`/examen${queryParams}`);
   };
 
   return (
@@ -168,7 +151,7 @@ export default function StudentAccount() {
           </TableHead>
 
           <TableBody>
-            {rows.map((row) => (
+            {studentExams.map((row) => (
               <StyledTableRow key={row.id}>
                 <StyledTableCell
                   component="th"
@@ -178,7 +161,7 @@ export default function StudentAccount() {
                   {row.name}
                 </StyledTableCell>
                 <StyledTableCell align="center">
-                  {row.formattedDate}
+                  {new Date(row.dataexamen).toLocaleDateString()}
                 </StyledTableCell>
                 <StyledTableCell align="center" style={{ textAlign: "center" }}>
                   {row.sala}
@@ -194,15 +177,14 @@ export default function StudentAccount() {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Link href={`/examen`} passHref>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      style={{ margin: "0 5px" }}
-                    >
-                      Modifică
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    style={{ margin: "0 5px" }}
+                    onClick={() => handleModifyClick(row)}
+                  >
+                    Modifică
+                  </Button>
 
                   <Button
                     variant="outlined"

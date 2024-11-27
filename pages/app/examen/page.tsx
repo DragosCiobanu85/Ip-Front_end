@@ -1,58 +1,49 @@
 "use client";
-import React, { useState } from "react";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
+import React, { useState, useEffect } from "react";
+import { useExams } from "../context/examcontext";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import dayjs from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { useSearchParams, useRouter } from "next/navigation";
 import "./app.css";
 
-export default function Examen() {
-  const options = {
-    facultate: [
-      "Facultatea de Inginerie Electrica si Stiinta Calculatoarelor",
-      "Facultatea de Stiinte ale Educatiei",
-      "Facultatea de Economie, Administratie si Afaceri",
-    ],
-    materie: [
-      "Ingineria Programelor",
-      "Calcul mobil",
-      "Proiectarea bazelor de date",
-    ],
-    profesor: [
-      "Prof. Dr. Popescu",
-      "Lect. Dr. Ionescu",
-      "Asist. Dr. Georgescu",
-    ],
-    grupa: ["3141", "3142", "3143", "3144"],
-  };
+const options = {
+  materie: [
+    "Ingineria Programelor",
+    "Calcul mobil",
+    "Proiectarea bazelor de date",
+  ],
+  grupa: ["3141", "3142", "3143", "3144"],
+};
 
-  const [faculty, setFaculty] = useState("");
+export default function ProgramareExamen() {
+  const { addExamToTeacher, addExamsToStudentPage, updateExam } = useExams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [subject, setSubject] = useState("");
-  const [professor, setProfessor] = useState("");
   const [group, setGroup] = useState("");
   const [date, setDate] = useState<dayjs.Dayjs | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const [isFacultyDropdownOpen, setIsFacultyDropdownOpen] = useState(false);
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
-  const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false);
+  const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
 
-  const toggleDropdown =
-    (dropdownSetter: (value: boolean) => void, currentValue: boolean) =>
-    (event: React.MouseEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      dropdownSetter(!currentValue);
-    };
+  useEffect(() => {
+    const examQuery = searchParams.get("exam");
 
-  const handleSelection = (
-    setter: (value: string) => void,
-    value: string,
-    dropdownSetter: (value: boolean) => void
-  ) => {
-    setter(value);
-    dropdownSetter(false);
-  };
+    if (examQuery) {
+      const exam = JSON.parse(decodeURIComponent(examQuery));
+      setSubject(exam.name);
+      setGroup(exam.grupa);
+      setDate(dayjs(exam.dataexamen));
+
+      setIsSubjectDropdownOpen(false);
+      setIsGroupDropdownOpen(false);
+    }
+  }, [searchParams]);
 
   const toggleCalendar = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -64,56 +55,73 @@ export default function Examen() {
     setIsCalendarOpen(false);
   };
 
+  const handleSubjectSelection = (selectedSubject: string) => {
+    setSubject(selectedSubject);
+    setIsSubjectDropdownOpen(false);
+  };
+
+  const handleGroupSelection = (selectedGroup: string) => {
+    setGroup(selectedGroup);
+    setIsGroupDropdownOpen(false);
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!subject || !group || !date) {
+      alert("Te rugăm să completezi toate câmpurile.");
+      return;
+    }
+
+    const newExam = {
+      id: searchParams.get("exam")
+        ? JSON.parse(decodeURIComponent(searchParams.get("exam") as string)).id
+        : Date.now(),
+      name: subject,
+      professor: "",
+      assistant: "",
+      sala: "",
+      ora: "",
+      dataexamen: date.toDate(),
+      grupa: group,
+    };
+
+    if (searchParams.get("exam")) {
+      const examId = JSON.parse(
+        decodeURIComponent(searchParams.get("exam") as string)
+      ).id;
+      updateExam(examId, newExam);
+      alert("Examenul a fost actualizat cu succes!");
+      router.push("/studentpage");
+    } else {
+      addExamToTeacher(newExam);
+      addExamsToStudentPage(newExam);
+      alert("Examenul a fost programat cu succes!");
+      router.push("/studentpage");
+    }
+
+    setSubject("");
+    setGroup("");
+    setDate(null);
+  };
+
   return (
     <main className="flex flex-col pb-40 bg-white max-md:pb-24">
       <h1 className="self-center mt-16 text-3xl font-medium text-blue-950 max-md:mt-10">
-        Programare examene
+        Programare examen
       </h1>
-      <h2 className="self-center mt-4 text-3xl font-medium leading-9 text-center text-blue-950">
-        Sesiunea ordinară nr. 1<br /> An universitar 2024 - 2025
-      </h2>
 
-      <form className="flex flex-col gap-10 px-20 mt-20 w-full text-2xl font-medium text-blue-950 max-md:px-5 max-md:mt-10">
+      <form
+        className="flex flex-col gap-10 px-20 mt-20 w-full text-2xl font-medium text-blue-950 max-md:px-5 max-md:mt-10"
+        onSubmit={handleSubmit}
+      >
         <div className="flex justify-between w-full gap-6">
           <div className="flex flex-col w-[60%] gap-6">
+            {/* Selector pentru Materie */}
             <div className="relative">
               <button
-                onClick={toggleDropdown(
-                  setIsFacultyDropdownOpen,
-                  isFacultyDropdownOpen
-                )}
-                className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-              >
-                {faculty || "Selectează Facultatea"}
-              </button>
-
-              {isFacultyDropdownOpen && (
-                <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
-                  {options.facultate.map((option, index) => (
-                    <li
-                      key={index}
-                      className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                      onClick={() =>
-                        handleSelection(
-                          setFaculty,
-                          option,
-                          setIsFacultyDropdownOpen
-                        )
-                      }
-                    >
-                      {option}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="relative">
-              <button
-                onClick={toggleDropdown(
-                  setIsSubjectDropdownOpen,
-                  isSubjectDropdownOpen
-                )}
+                type="button"
+                onClick={() => setIsSubjectDropdownOpen((prev) => !prev)}
                 className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
               >
                 {subject || "Selectează Materia"}
@@ -125,13 +133,7 @@ export default function Examen() {
                     <li
                       key={index}
                       className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                      onClick={() =>
-                        handleSelection(
-                          setSubject,
-                          option,
-                          setIsSubjectDropdownOpen
-                        )
-                      }
+                      onClick={() => handleSubjectSelection(option)}
                     >
                       {option}
                     </li>
@@ -140,30 +142,23 @@ export default function Examen() {
               )}
             </div>
 
+            {/* Selector pentru Grupă */}
             <div className="relative">
               <button
-                onClick={toggleDropdown(
-                  setIsProfessorDropdownOpen,
-                  isProfessorDropdownOpen
-                )}
+                type="button"
+                onClick={() => setIsGroupDropdownOpen((prev) => !prev)}
                 className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
               >
-                {professor || "Selectează Profesorul"}
+                {group || "Selectează Grupa"}
               </button>
 
-              {isProfessorDropdownOpen && (
+              {isGroupDropdownOpen && (
                 <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
-                  {options.profesor.map((option, index) => (
+                  {options.grupa.map((option, index) => (
                     <li
                       key={index}
                       className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                      onClick={() =>
-                        handleSelection(
-                          setProfessor,
-                          option,
-                          setIsProfessorDropdownOpen
-                        )
-                      }
+                      onClick={() => handleGroupSelection(option)}
                     >
                       {option}
                     </li>
@@ -173,12 +168,13 @@ export default function Examen() {
             </div>
           </div>
 
+          {/* Selector pentru Dată */}
           <div className="flex flex-col w-[35%] gap-6">
             <button
               onClick={toggleCalendar}
               className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
             >
-              {date ? date.format("DD/MM/YYYY") : "Selectează Data"}{" "}
+              {date ? date.format("DD/MM/YYYY") : "Selectează Data"}
             </button>
             {isCalendarOpen && (
               <div className="p-4 bg-white rounded-lg border border-solid border-slate-800 shadow-md">
@@ -187,24 +183,6 @@ export default function Examen() {
                 </LocalizationProvider>
               </div>
             )}
-
-            <div className="w-full">
-              <label className="block mb-2 text-lg font-medium text-blue-950">
-                Grupa
-              </label>
-              <select
-                value={group}
-                onChange={(e) => setGroup(e.target.value)}
-                className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-              >
-                <option value="">Selectează Grupa</option>
-                {options.grupa.map((option, index) => (
-                  <option key={index} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
         </div>
 

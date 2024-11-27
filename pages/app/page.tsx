@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { useExams } from "./context/examcontext";
 import { styled } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -8,16 +9,11 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
-import { Button } from "@nextui-org/react";
-import Link from "next/link";
-import Image from "next/image";
-import icon from "../app/images/boy.png";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
-    backgroundColor: "#d3d3d3", // Gri deschis pentru capul tabelului
+    backgroundColor: "#d3d3d3",
     color: "#000",
-    // Textul va fi negru
   },
   [`&.${tableCellClasses.body}`]: {
     fontSize: 14,
@@ -28,41 +24,14 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:nth-of-type(odd)": {
     backgroundColor: theme.palette.action.hover,
   },
-  // hide last border
   "&:last-child td, &:last-child th": {
     border: 0,
   },
 }));
 
-function createData(
-  id: number,
-  name: string,
-  dataexamen: Date,
-  sala: string,
-  ora: number
-) {
-  const formattedDate = dataexamen.toLocaleDateString();
-  return { id, name, formattedDate, sala, ora };
-}
-
-const rows = [
-  createData(1, "Fizica 1", new Date("2024-12-01"), "Sala 101", 12),
-  createData(2, "Matematici speciale", new Date("2024-01-14"), "Sala 202", 14),
-  createData(3, "PCLP1", new Date("2024-01-20"), "Sala 101", 12),
-  createData(4, "POO", new Date("2024-01-22"), "Sala 202", 14),
-  createData(5, "Analiza matematica", new Date("2024-01-26"), "Sala 101", 12),
-  createData(6, "Proiectare logica", new Date("2024-01-28"), "Sala 202", 14),
-  createData(
-    7,
-    "Proiectare interfete utlizator",
-    new Date("2024-01-30"),
-    "Sala 101",
-    12
-  ),
-  createData(8, "Fizica 2", new Date("2024-02-02"), "Sala 202", 14),
-];
-
 export default function Home() {
+  const { homeExams } = useExams();
+
   return (
     <>
       <title style={{ marginTop: "10px" }}>Programare examene</title>
@@ -114,46 +83,66 @@ export default function Home() {
       <TableContainer
         component={Paper}
         style={{
-          marginLeft: "42px", // Adaugă margine de 42px pe stânga
-          marginRight: "42px", // Adaugă margine de 42px pe dreapta
-          maxWidth: "calc(100% - 84px)", // Setează lățimea tabelului mai mică
-          margin: "0 auto", // Centrează tabelul pe orizontală
+          marginLeft: "42px",
+          marginRight: "42px",
+          maxWidth: "calc(100% - 84px)",
+          margin: "0 auto",
         }}
       >
         <Table
           sx={{ minWidth: 700 }}
           aria-label="customized table"
-          style={{ tableLayout: "fixed" }} // Setează lățimea fixă pentru coloane
+          style={{ tableLayout: "fixed" }}
         >
           <TableHead>
             <TableRow>
-              <StyledTableCell style={{ width: "25%" }}>
+              <StyledTableCell style={{ width: "20%" }}>
                 Materie
               </StyledTableCell>
-              <StyledTableCell style={{ width: "25%" }} align="right">
+              <StyledTableCell style={{ width: "20%" }} align="right">
+                Profesor
+              </StyledTableCell>
+              <StyledTableCell style={{ width: "20%" }} align="right">
+                Asistent
+              </StyledTableCell>
+              <StyledTableCell style={{ width: "20%" }} align="right">
                 Data examen
               </StyledTableCell>
-              <StyledTableCell style={{ width: "25%" }} align="right">
+              <StyledTableCell style={{ width: "10%" }} align="right">
                 Sala
               </StyledTableCell>
-              <StyledTableCell style={{ width: "25%" }} align="right">
+              <StyledTableCell style={{ width: "10%" }} align="right">
                 Ora
               </StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((row) => (
-              <StyledTableRow key={row.id}>
-                <StyledTableCell component="th" scope="row">
-                  {row.name}
+            {homeExams.length > 0 ? (
+              homeExams.map((row) => (
+                <StyledTableRow key={row.id}>
+                  <StyledTableCell component="th" scope="row">
+                    {row.name}
+                  </StyledTableCell>
+                  <StyledTableCell align="right">
+                    {row.professor}
+                  </StyledTableCell>
+                  <StyledTableCell align="right">
+                    {row.assistant}
+                  </StyledTableCell>
+                  <StyledTableCell align="right">
+                    {row.dataexamen.toLocaleDateString()}
+                  </StyledTableCell>
+                  <StyledTableCell align="right">{row.sala}</StyledTableCell>
+                  <StyledTableCell align="right">{row.ora}</StyledTableCell>
+                </StyledTableRow>
+              ))
+            ) : (
+              <StyledTableRow>
+                <StyledTableCell colSpan={6} align="center">
+                  Nu sunt examene programate.
                 </StyledTableCell>
-                <StyledTableCell align="right">
-                  {row.formattedDate}
-                </StyledTableCell>
-                <StyledTableCell align="right">{row.sala}</StyledTableCell>
-                <StyledTableCell align="right">{row.ora}</StyledTableCell>
               </StyledTableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>
