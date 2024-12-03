@@ -12,13 +12,14 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const router = useRouter();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,16 +32,35 @@ export default function Login() {
 
     const emailDomain = email.split("@")[1];
 
-    if (emailDomain === "student.usv.ro") {
-      router.push("/studentpage");
-    } else if (emailDomain === "usm.ro") {
-      router.push("/teacherpage");
-    } else {
-      setEmailError("Introdu te rog o adresa de student sau de profesor ");
-    }
+    try {
+      const response = await fetch("http://127.0.0.1:8000/useri/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-    console.log("Email:", email);
-    console.log("Password:", password);
+      const data = await response.json();
+
+      if (response.ok) {
+        // Login success - Redirecționează utilizatorul pe baza domeniului
+        if (emailDomain === "student.usv.ro") {
+          router.push("/studentpage");
+        } else if (emailDomain === "usm.ro") {
+          router.push("/teacherpage");
+        }
+      } else {
+        // Dacă login-ul a eșuat
+        setPasswordError(data.message || "Email sau parolă incorectă.");
+      }
+    } catch (error) {
+      console.error("Eroare la trimiterea cererii de login:", error);
+      setPasswordError("A apărut o eroare la autentificare.");
+    }
   };
 
   return (
@@ -64,7 +84,6 @@ export default function Login() {
           }}>
           Programare examene
         </h1>
-
         <h1
           style={{
             fontSize: "2rem",
@@ -138,6 +157,8 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            error={!!passwordError}
+            helperText={passwordError}
             sx={{
               "& .MuiOutlinedInput-root": {
                 "& fieldset": {
