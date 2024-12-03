@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "@mui/material/Button";
 import { styled } from "@mui/material/styles";
 import Table from "@mui/material/Table";
@@ -19,6 +19,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { Exam, useExams } from "../context/examcontext";
 import { useRouter } from "next/navigation";
 
+// Styled components
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
     backgroundColor: "#d3d3d3",
@@ -33,7 +34,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:nth-of-type(odd)": {
     backgroundColor: theme.palette.action.hover,
   },
-
   "&:last-child td, &:last-child th": {
     border: 0,
   },
@@ -42,24 +42,127 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 export default function StudentAccount() {
   const { studentExams, removeExamFromStudent, removeExamFromTeacher } =
     useExams();
-  const [rows, setRows] = useState(studentExams);
+  const [rows, setRows] = useState<any[]>([]); // To store exams fetched from API
   const [openDialog, setOpenDialog] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
+  const [examToDelete, setExamToDelete] = useState<number | null>(null); // Track the exam to delete
+  const [faculties, setFaculties] = useState<any[]>([]);
+  const [professors, setProfessors] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
   const router = useRouter();
 
-  const handleCancel = (id: number) => {
-    removeExamFromStudent(id);
-    removeExamFromTeacher(id);
+  // Fetch exams from the API on component mount
+  useEffect(() => {
+    const fetchExams = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/cereri/cereri/"); // Your API endpoint here
+        if (response.ok) {
+          const data = await response.json();
+          setRows(data); // Assuming the response contains the list of exams
+        } else {
+          console.error("Failed to fetch exams");
+        }
+      } catch (error) {
+        console.error("Error fetching exams:", error);
+      }
+    };
 
-    setRows((prevRows) => prevRows.filter((exam) => exam.id !== id));
+    fetchExams();
+  }, []);
 
-    setCancelMessage("Examenul a fost anulat!");
-    setOpenDialog(true);
+  // Fetch faculties, professors, and subjects
+  useEffect(() => {
+    const fetchNames = async () => {
+      try {
+        // Fetch data from API
+        const facultyResponse = await fetch("http://127.0.0.1:8000/facultati/");
+        const professorResponse = await fetch(
+          "http://127.0.0.1:8000/profesori/profesori/"
+        );
+        const subjectResponse = await fetch(
+          "http://127.0.0.1:8000/materii/materii/"
+        );
+
+        if (facultyResponse.ok && professorResponse.ok && subjectResponse.ok) {
+          const facultyData = await facultyResponse.json();
+          const professorData = await professorResponse.json();
+          const subjectData = await subjectResponse.json();
+
+          // Debugging logs
+          console.log("Faculties:", facultyData);
+          console.log("Professors:", professorData);
+          console.log("Subjects:", subjectData);
+
+          setFaculties(facultyData);
+          setProfessors(professorData);
+          setSubjects(subjectData);
+        } else {
+          console.error("Failed to fetch names");
+        }
+      } catch (error) {
+        console.error("Error fetching names:", error);
+      }
+    };
+
+    fetchNames();
+  }, []);
+
+  // Function to handle canceling a request
+  const handleCancel = async (id: number) => {
+    setExamToDelete(id); // Set the exam to delete before showing the dialog
+    setCancelMessage("Cererea va fi ștearsă! Ești sigur?");
+    setOpenDialog(true); // Open the dialog for confirmation
   };
 
+  // Function to confirm the deletion of the exam
+  const confirmDelete = async () => {
+    if (examToDelete !== null) {
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:8000/cereri/cereri/${examToDelete}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (response.ok) {
+          // Remove the exam from the state and UI
+          setRows((prevRows) =>
+            prevRows.filter((exam) => exam.id_Cerere !== examToDelete)
+          );
+
+          // Optionally, remove from context if needed
+          removeExamFromStudent(examToDelete);
+          removeExamFromTeacher(examToDelete);
+
+          setCancelMessage("Cererea a fost ștearsă!");
+        } else {
+          console.error("Failed to delete cererea");
+        }
+      } catch (error) {
+        console.error("Error deleting cererea:", error);
+      }
+
+      setOpenDialog(false); // Close the dialog after confirmation
+    }
+  };
+
+  // Function to modify an exam
   const handleModifyClick = (exam: Exam) => {
     const queryParams = `?exam=${encodeURIComponent(JSON.stringify(exam))}`;
-    router.push(`/examen${queryParams}`);
+    router.push(`/examenmodificat${queryParams}`);
+  };
+
+  // Helper function to get the name by id
+  const getNameById = (id: any, data: any[], key: string) => {
+    const idAsNumber = Number(id); // Convertim ID-ul într-un număr
+    const item = data.find((item) => Number(item[key]) === idAsNumber); // Folosim key pentru a căuta corect ID-ul
+
+    if (item) {
+      return item.nume; // Returnează numele
+    }
+
+    return "N/A"; // Dacă nu găsește, returnează "N/A"
   };
 
   return (
@@ -80,24 +183,6 @@ export default function StudentAccount() {
             color: "#000000",
             height: "55px",
             marginBottom: "30px",
-          }}
-          sx={{
-            width: "calc(100% - 84px)",
-            marginLeft: "42px",
-            marginRight: "42px",
-            "&:hover": {
-              backgroundColor: "#1E90FF",
-              color: "#ffffff",
-              borderColor: "#1E90FF",
-            },
-            "& .MuiOutlinedInput-root": {
-              "& fieldset": {
-                borderColor: "#192041",
-              },
-              "&.Mui-focused fieldset": {
-                borderColor: "#192041",
-              },
-            },
           }}
         >
           Programare examen
@@ -121,74 +206,67 @@ export default function StudentAccount() {
           <TableHead>
             <TableRow>
               <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
+                Facultate
+              </StyledTableCell>
+              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
+                Profesor
+              </StyledTableCell>
+              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
                 Materie
               </StyledTableCell>
-              <StyledTableCell
-                style={{ width: "20%", textAlign: "center" }}
-                align="right"
-              >
-                Data examen
+              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
+                Data
               </StyledTableCell>
-              <StyledTableCell
-                style={{ width: "20%", textAlign: "center" }}
-                align="right"
-              >
-                Sala
-              </StyledTableCell>
-              <StyledTableCell
-                style={{ width: "20%", textAlign: "center" }}
-                align="right"
-              >
-                Ora
-              </StyledTableCell>
-              <StyledTableCell
-                style={{ width: "20%", textAlign: "center" }}
-                align="right"
-              >
+
+              <StyledTableCell style={{ width: "10%", textAlign: "center" }}>
                 Acțiune
               </StyledTableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
-            {studentExams.map((row) => (
-              <StyledTableRow key={row.id}>
+            {rows.map((row) => (
+              <StyledTableRow key={row.id_Cerere}>
+                {/* Facultate */}
                 <StyledTableCell
                   component="th"
                   scope="row"
                   style={{ textAlign: "center" }}
                 >
-                  {row.name}
+                  {getNameById(row.id_Facultate, faculties, "id_Facultate")}
                 </StyledTableCell>
+
+                {/* Profesor */}
                 <StyledTableCell align="center">
-                  {new Date(row.dataexamen).toLocaleDateString()}
+                  {getNameById(row.id_Profesor, professors, "id_Profesor")}
                 </StyledTableCell>
-                <StyledTableCell align="center" style={{ textAlign: "center" }}>
-                  {row.sala}
+
+                {/* Materie */}
+                <StyledTableCell align="center">
+                  {getNameById(row.id_Materie, subjects, "id_Materie")}
                 </StyledTableCell>
-                <StyledTableCell align="center" style={{ textAlign: "center" }}>
-                  {row.ora}
+
+                {/* Data examenului */}
+                <StyledTableCell align="center">
+                  {new Date(row.data).toLocaleDateString()}
                 </StyledTableCell>
-                <StyledTableCell
-                  align="center"
-                  style={{
-                    textAlign: "center",
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
+
+                {/* Acțiune */}
+                <StyledTableCell align="center">
                   <Button
                     variant="outlined"
-                    size="small"
-                    style={{ margin: "0 5px" }}
                     onClick={() => handleModifyClick(row)}
                   >
                     Modifică
                   </Button>
-
                   <Button
                     variant="outlined"
-                    onClick={() => handleCancel(row.id)}
+                    onClick={() => handleCancel(row.id_Cerere)}
+                    style={{
+                      marginLeft: "10px",
+                      backgroundColor: "#FF0000",
+                      color: "white",
+                    }}
                   >
                     Anulează
                   </Button>
@@ -199,30 +277,16 @@ export default function StudentAccount() {
         </Table>
       </TableContainer>
 
-      <Dialog
-        open={openDialog}
-        onClose={() => setOpenDialog(false)}
-        sx={{
-          "& .MuiDialog-paper": {
-            backgroundColor: "#f0f8ff",
-            color: "#333",
-            borderRadius: "12px",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-          },
-        }}
-      >
-        <DialogTitle sx={{ backgroundColor: "#272F54", color: "#ffffff" }}>
-          Mesaj
-        </DialogTitle>
-        <DialogContent sx={{ backgroundColor: "#ffffff", color: "#000000" }}>
-          <p>{cancelMessage}</p>
-        </DialogContent>
-        <DialogActions sx={{ color: "#272F54", backgroundColor: "#ffffff" }}>
-          <Button
-            onClick={() => setOpenDialog(false)}
-            sx={{ color: "#272F54", backgroundColor: "#ffffff" }}
-          >
-            OK
+      {/* Dialog for cancel confirmation */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Confirmare anulare</DialogTitle>
+        <DialogContent>{cancelMessage}</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)} color="primary">
+            Închide
+          </Button>
+          <Button onClick={confirmDelete} color="secondary" variant="contained">
+            Confirmă
           </Button>
         </DialogActions>
       </Dialog>

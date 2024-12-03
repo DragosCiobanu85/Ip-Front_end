@@ -3,13 +3,13 @@ import React, { createContext, useContext, useState } from "react";
 
 export type Exam = {
   id: number;
-  name: string;
-  professor: string;
-  assistant: string;
-  sala: string;
+  id_Facultate: number;
+  id_Materie: number;
+  id_Profesor: number;
+  id_Profesor_1: number;
+  id_Sala: number;
   ora: string;
-  dataexamen: Date;
-  grupa: string;
+  data: Date;
 };
 
 type ExamContextType = {
