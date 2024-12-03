@@ -1,0 +1,95 @@
+/* Stil pentru containerul principal */
+.examenprofeor-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 50px;
+}
+
+/* Stil pentru tabel */
+.examenprofeor-container table {
+  width: 95%; /* Tabelul va ocupa întreaga lățime a paginii */
+  margin: 0 auto; /* Aliniere pe centru */
+  border: 1px solid #192041;
+  table-layout: fixed; /* Asigură uniformitatea coloanelor */
+}
+
+/* Stil pentru antet și celule din tabel */
+.examenprofeor-container th,
+.examenprofeor-container td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: start;
+}
+
+/* Fundal pentru antetul tabelului */
+.examenprofeor-container th {
+  background-color: #f2f2f2;
+}
+
+
+/* Stil pentru wrapper-ul dropdown-urilor */
+.examenprofeor-container .dropdown-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  margin-top: 40px;
+}
+
+/* Stil pentru fiecare select */
+.examenprofeor-container .dropdown-select {
+  width: 640px;
+  height: 60px;
+  padding: 5px;
+  font-size: 16px;
+  border: 1px solid #192041;
+  border-radius: 5px;
+  background-color: white;
+  cursor: pointer;
+}
+
+
+
+
+
+
+
+
+
+/* Stil pentru butonul de salvare */
+.examenprofeor-container .save-button {
+  width: 640px; /* Lasă butonul să se ajusteze la lățimea conținutului */
+  height: 60px;
+  background-color: #192041;
+  color: white;
+  border: none;
+  padding: 10px 20px; /* Adaugă padding pentru un buton mai larg */
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+
+  margin: 20px auto; 
+  margin-top: 25px;/* Centerază butonul orizontal și adaugă spațiu sus/jos */
+  display: block; /* Asigură că butonul se comportă ca un element bloc */
+}
+
+/* Hover pe butonul de salvare */
+.examenprofeor-container .save-button:hover {
+  background-color: #0009bb;
+}
+
+/* Stil pentru butonul de salvare când este dezactivat */
+.examenprofeor-container .save-button:disabled {
+  background-color: #b0b0b0;
+  cursor: not-allowed;
+}
+
+
+/* Stil pentru containerul care conține titlul */
+.examenprofeor-container .center-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
