@@ -33,14 +33,14 @@ export default function Login() {
     const emailDomain = email.split("@")[1];
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/useri/", {
+      const response = await fetch("http://127.0.0.1:8000/useri/users/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email,
-          password,
+          email: email,
+          parola: password,
         }),
       });
 
