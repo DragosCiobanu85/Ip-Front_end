@@ -18,6 +18,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import { Exam, useExams } from "../context/examcontext";
 import { useRouter } from "next/navigation";
+import { Token } from "@mui/icons-material";
 
 // Styled components
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -55,7 +56,25 @@ export default function StudentAccount() {
   useEffect(() => {
     const fetchExams = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/cereri/cereri/"); // Your API endpoint here
+        // Retrieve the token from localStorage
+        const token = localStorage.getItem("auth_token");
+
+        // Check if token exists
+        if (!token) {
+          console.error("No token found. Please log in first.");
+          return; // Exit if there's no token
+        }
+
+        console.log("Token retrieved:", token); // Debugging line
+
+        // Fetch exams
+        const response = await fetch("http://127.0.0.1:8000/cereri/cereri/", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         if (response.ok) {
           const data = await response.json();
           setRows(data); // Assuming the response contains the list of exams
@@ -67,8 +86,9 @@ export default function StudentAccount() {
       }
     };
 
+    // Fetch exams on component mount
     fetchExams();
-  }, []);
+  }, []); // Empty dependency array means this runs once on mount
 
   // Fetch faculties, professors, and subjects
   useEffect(() => {
@@ -178,11 +198,12 @@ export default function StudentAccount() {
             alignItems: "center",
             textAlign: "center",
             margin: "0 auto",
-            marginTop: "40px",
-            backgroundColor: "#ffffff",
-            color: "#000000",
+            marginTop: "60px",
+            backgroundColor: "#192041",
+            color: "#ffffff",
             height: "55px",
             marginBottom: "30px",
+            width: "350px",
           }}
         >
           Programare examen
@@ -218,7 +239,7 @@ export default function StudentAccount() {
                 Data
               </StyledTableCell>
 
-              <StyledTableCell style={{ width: "10%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
                 Acțiune
               </StyledTableCell>
             </TableRow>
@@ -253,23 +274,31 @@ export default function StudentAccount() {
 
                 {/* Acțiune */}
                 <StyledTableCell align="center">
-                  <Button
-                    variant="outlined"
-                    onClick={() => handleModifyClick(row)}
-                  >
-                    Modifică
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => handleCancel(row.id_Cerere)}
+                  <div
                     style={{
-                      marginLeft: "10px",
-                      backgroundColor: "#FF0000",
-                      color: "white",
+                      display: "flex",
+                      justifyContent: "space-around",
+                      gap: "0 10px",
                     }}
                   >
-                    Anulează
-                  </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => handleModifyClick(row)}
+                    >
+                      Modifică
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => handleCancel(row.id_Cerere)}
+                      style={{
+                        marginLeft: "10px",
+                        backgroundColor: "#FF0000",
+                        color: "white",
+                      }}
+                    >
+                      Anulează
+                    </Button>
+                  </div>
                 </StyledTableCell>
               </StyledTableRow>
             ))}
@@ -285,7 +314,14 @@ export default function StudentAccount() {
           <Button onClick={() => setOpenDialog(false)} color="primary">
             Închide
           </Button>
-          <Button onClick={confirmDelete} color="secondary" variant="contained">
+          <Button
+            onClick={confirmDelete}
+            variant="contained"
+            sx={{
+              backgroundColor: "red",
+              color: "#fff",
+            }}
+          >
             Confirmă
           </Button>
         </DialogActions>
