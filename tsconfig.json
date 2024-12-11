@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 {
   "compilerOptions": {
     "target": "ESNext",
@@ -19,3 +20,21 @@
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
+=======
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist"
+  },
+  "include": [
+    "src/**/*",
+    "webpack.config.ts"
+  ]
+}
+>>>>>>> Stashed changes
