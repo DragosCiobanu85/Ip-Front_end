@@ -35,6 +35,7 @@ export default function Home() {
   const [faculties, setFaculties] = React.useState<any[]>([]);
   const [professors, setProfessors] = React.useState<any[]>([]);
   const [subjects, setSubjects] = React.useState<any[]>([]);
+  const [groups, setGroups] = React.useState<any[]>([]);
   const [rooms, setRooms] = React.useState<any[]>([]);
 
   // Fetch data for exams, faculties, professors, subjects, and rooms
@@ -42,25 +43,34 @@ export default function Home() {
     const fetchData = async () => {
       try {
         // Fetch data from multiple API endpoints
-        const [examsRes, facultiesRes, professorsRes, subjectsRes, roomsRes] =
-          await Promise.all([
-            fetch("http://127.0.0.1:8000/examene/examene/"), // Exam data
-            fetch("http://127.0.0.1:8000/facultati/"), // Faculties
-            fetch("http://127.0.0.1:8000/profesori/profesori/"), // Professors
-            fetch("http://127.0.0.1:8000/materii/materii/"), // Subjects
-            fetch("http://127.0.0.1:8000/sali/"), // Rooms
-          ]);
+        const [
+          examsRes,
+          facultiesRes,
+          professorsRes,
+          groupsRes,
+          subjectsRes,
+          roomsRes,
+        ] = await Promise.all([
+          fetch("http://127.0.0.1:8000/examene/examene/"), // Exam data
+          fetch("http://127.0.0.1:8000/facultati/"), // Faculties
+          fetch("http://127.0.0.1:8000/profesori/profesori/"),
+          fetch("http://127.0.0.1:8000/grupe/grupe/"), // Professors
+          fetch("http://127.0.0.1:8000/materii/materii/"), // Subjects
+          fetch("http://127.0.0.1:8000/sali/"), // Rooms
+        ]);
 
         if (
           examsRes.ok &&
           facultiesRes.ok &&
           professorsRes.ok &&
+          groupsRes &&
           subjectsRes.ok &&
           roomsRes.ok
         ) {
           const examsData = await examsRes.json();
           const facultiesData = await facultiesRes.json();
           const professorsData = await professorsRes.json();
+          const groupsData = await groupsRes.json();
           const subjectsData = await subjectsRes.json();
           const roomsData = await roomsRes.json();
 
@@ -68,6 +78,7 @@ export default function Home() {
           setExamDetails(examsData);
           setFaculties(facultiesData);
           setProfessors(professorsData);
+          setGroups(groupsData);
           setSubjects(subjectsData);
           setRooms(roomsData);
         } else {
@@ -150,22 +161,28 @@ export default function Home() {
         >
           <TableHead>
             <TableRow>
-              <StyledTableCell style={{ width: "20%" }}>
-                Materie
+              <StyledTableCell style={{ width: "12.28%" }} align="center">
+                Facultate
               </StyledTableCell>
-              <StyledTableCell style={{ width: "20%" }} align="right">
+              <StyledTableCell style={{ width: "12.28%" }} align="center">
                 Profesor
               </StyledTableCell>
-              <StyledTableCell style={{ width: "20%" }} align="right">
+              <StyledTableCell style={{ width: "12.28%" }} align="center">
+                Materie
+              </StyledTableCell>
+              <StyledTableCell style={{ width: "12.28%" }} align="center">
+                Grupa
+              </StyledTableCell>
+              <StyledTableCell style={{ width: "12.28%" }} align="center">
                 Asistent
               </StyledTableCell>
-              <StyledTableCell style={{ width: "20%" }} align="right">
+              <StyledTableCell style={{ width: "12.28%" }} align="center">
                 Data examen
               </StyledTableCell>
-              <StyledTableCell style={{ width: "10%" }} align="right">
+              <StyledTableCell style={{ width: "12.28%" }} align="center">
                 Sala
               </StyledTableCell>
-              <StyledTableCell style={{ width: "10%" }} align="right">
+              <StyledTableCell style={{ width: "12.28%" }} align="center">
                 Ora
               </StyledTableCell>
             </TableRow>
@@ -178,28 +195,34 @@ export default function Home() {
 
                 return (
                   <StyledTableRow key={row.id_Examen}>
-                    <StyledTableCell component="th" scope="row">
-                      {getNameById(row.id_Materie, subjects, "id_Materie")}
+                    <StyledTableCell component="th" scope="row" align="center">
+                      {getNameById(row.id_Facultate, faculties, "id_Facultate")}
                     </StyledTableCell>
-                    <StyledTableCell align="right">
+                    <StyledTableCell align="center">
                       {getNameById(row.id_Profesor, professors, "id_Profesor")}
                     </StyledTableCell>
-                    <StyledTableCell align="right">
+                    <StyledTableCell component="th" scope="row" align="center">
+                      {getNameById(row.id_Materie, subjects, "id_Materie")}
+                    </StyledTableCell>
+                    <StyledTableCell component="th" scope="row" align="center">
+                      {getNameById(row.id_Grupa, groups, "id_Grupa")}
+                    </StyledTableCell>
+                    <StyledTableCell align="center">
                       {getNameById(
                         row.id_Profesor_1,
                         professors,
                         "id_Profesor"
                       )}
                     </StyledTableCell>
-                    <StyledTableCell align="right">
+                    <StyledTableCell align="center">
                       {new Date(row.data).toLocaleDateString()}
                     </StyledTableCell>
-                    <StyledTableCell align="right">
+                    <StyledTableCell align="center">
                       {getNameById(row.id_Sala, rooms, "id_Sala") !== "N/A"
                         ? getNameById(row.id_Sala, rooms, "id_Sala")
                         : "N/A"}
                     </StyledTableCell>
-                    <StyledTableCell align="right">
+                    <StyledTableCell align="center">
                       {row.ora
                         ? new Date(`1970-01-01T${row.ora}`).toLocaleTimeString(
                             [],
@@ -215,7 +238,7 @@ export default function Home() {
               })
             ) : (
               <StyledTableRow>
-                <StyledTableCell colSpan={6} align="center">
+                <StyledTableCell colSpan={7} align="center">
                   Nu sunt examene programate.
                 </StyledTableCell>
               </StyledTableRow>
