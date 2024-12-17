@@ -1,181 +1,62 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useExams } from "../context/examcontext";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import dayjs from "dayjs";
 import "./index.css";
 
 export default function ExamenProfesor() {
-  const [selectedAssistant, setSelectedAssistant] = useState<number | string>(
-    ""
-  ); // ID-ul asistentului
-  const [selectedRoom, setSelectedRoom] = useState<number | string>(""); // ID-ul sălii
-  const [selectedTime, setSelectedTime] = useState<string>(""); // Ora
-  const [message, setMessage] = useState<string>(""); // Mesajul de succes
-  const [examDetails, setExamDetails] = useState<any>({}); // Detaliile examenului
-  const [professors, setProfessors] = useState<any[]>([]); // Lista de profesori
-  const [rooms, setRooms] = useState<any[]>([]); // Lista de săli
-  const [facultyName, setFacultyName] = useState<string>(""); // Numele facultății
-  const [professorName, setProfessorName] = useState<string>(""); // Numele profesorului
-  const [subjectName, setSubjectName] = useState<string>(""); // Numele materiei
-  const [examDate, setExamDate] = useState(dayjs()); // Data examenului
-  const [idCerere, setIdCerere] = useState<number | null>(null); // ID-ul cererii
-
-  const [faculties, setFaculties] = useState<any[]>([]); // Facultăți
-  const [professorsData, setProfessorsData] = useState<any[]>([]); // Datele profesorilor
-  const [subjects, setSubjects] = useState<any[]>([]); // Materii
+  const [selectedAssistant, setSelectedAssistant] = useState("");
+  const [selectedRoom, setSelectedRoom] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
+  const [message, setMessage] = useState("");
+  const [queryParams, setQueryParams] = useState<any>({});
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
   const { addExamToHome, removeExamFromTeacher, removeExamFromStudent } =
     useExams();
   const router = useRouter();
 
-  const times = Array.from({ length: 11 }, (_, i) => `${8 + i}:00:00`);
-
   useEffect(() => {
     const { searchParams } = new URL(window.location.href);
-    const examQuery = searchParams.get("exam");
+    const id = searchParams.get("id");
+    const name = searchParams.get("name");
+    const data = searchParams.get("data");
+    const grupa = searchParams.get("grupa");
 
-    if (examQuery) {
-      try {
-        const exam = JSON.parse(decodeURIComponent(examQuery));
-        console.log("Exam extras:", exam);
-
-        setExamDetails(exam);
-        setExamDate(dayjs(exam.data));
-
-        if (exam.id_Cerere) {
-          setIdCerere(exam.id_Cerere);
-        } else {
-          console.error("id_Cerere nu există în exam.");
-        }
-      } catch (error) {
-        console.error("Eroare la parsarea JSON-ului exam:", error);
-      }
+    if (id && name && data && grupa) {
+      setQueryParams({ id, name, data, grupa });
+      console.log("Parametri URL:", { id, name, data, grupa });
     } else {
       console.log("Parametri lipsă în URL");
     }
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [facultiesRes, professorsRes, subjectsRes, roomsRes] =
-          await Promise.all([
-            fetch("http://127.0.0.1:8000/facultati/"),
-            fetch("http://127.0.0.1:8000/profesori/profesori/"),
-            fetch("http://127.0.0.1:8000/materii/materii/"),
-            fetch("http://127.0.0.1:8000/sali/"),
-          ]);
-
-        if (
-          facultiesRes.ok &&
-          professorsRes.ok &&
-          subjectsRes.ok &&
-          roomsRes.ok
-        ) {
-          setFaculties(await facultiesRes.json());
-          const professorsData = await professorsRes.json();
-          setProfessorsData(professorsData);
-          setProfessors(professorsData); // Setezi lista de profesori cu ID-uri
-          setSubjects(await subjectsRes.json());
-          setRooms(await roomsRes.json()); // Setezi lista de săli cu ID-uri
-        } else {
-          console.error("Eroare la obținerea datelor din API-uri");
-        }
-      } catch (error) {
-        console.error("Eroare la fetch:", error);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (
-      examDetails &&
-      professorsData.length &&
-      faculties.length &&
-      subjects.length
-    ) {
-      setProfessorName(
-        getNameById(examDetails.id_Profesor, professorsData, "id_Profesor")
-      );
-      setFacultyName(
-        getNameById(examDetails.id_Facultate, faculties, "id_Facultate")
-      );
-      setSubjectName(
-        getNameById(examDetails.id_Materie, subjects, "id_Materie")
-      );
-    }
-  }, [examDetails, professorsData, faculties, subjects]);
-
-  const getNameById = (
-    id: number | string,
-    data: any[],
-    key: string
-  ): string => {
-    const item = data.find((item) => item[key] === id);
-    return item ? item.nume : "N/A";
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
 
     const newExam = {
-      id_Facultate: examDetails.id_Facultate || 0,
-      id_Profesor: examDetails.id_Profesor || 0,
-      id_Profesor_1: selectedAssistant || 0, // ID-ul asistentului
-      id_Materie: examDetails.id_Materie || 0,
-      data: examDate.format("YYYY-MM-DD"),
-      id_Sala: selectedRoom || 0, // ID-ul sălii
-      ora: selectedTime, // Ora cu secunde
-      id_Cerere: idCerere || 0, // ID-ul cererii
+      id: queryParams.id ? parseInt(queryParams.id) : 0,
+      name: queryParams.name || "Exemplu Materie",
+      professor: "Prof. Example",
+      assistant: selectedAssistant,
+      sala: selectedRoom,
+      ora: selectedTime,
+      dataexamen: new Date(queryParams.data || "2024-12-01"),
+      grupa: queryParams.grupa || "Exemplu Grupa",
     };
 
-    try {
-      // Trimite cererea pentru a crea examenul
-      const response = await fetch("http://127.0.0.1:8000/examene/examene/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newExam),
-      });
+    addExamToHome(newExam);
 
-      if (response.ok) {
-        // Dacă examenul a fost salvat cu succes, elimină cererea
-        if (newExam.id_Cerere) {
-          const deleteRequest = await fetch(
-            `http://127.0.0.1:8000/cereri/cereri/${newExam.id_Cerere}`,
-            {
-              method: "DELETE",
-            }
-          );
+    removeExamFromTeacher(newExam.id);
+    removeExamFromStudent(newExam.id);
 
-          if (deleteRequest.ok) {
-            console.log(
-              `Cererea cu id_Cerere ${newExam.id_Cerere} a fost ștearsă.`
-            );
-          } else {
-            console.error("Eroare la ștergerea cererii.");
-          }
-        }
+    setMessage("Examen salvat cu succes!");
 
-        // Înlocuiește cererea din contextul profesorilor și studenților
-        removeExamFromTeacher(newExam.id_Cerere);
-        removeExamFromStudent(newExam.id_Cerere);
-
-        // Setează mesajul de succes
-        setMessage("Examen salvat cu succes!");
-      } else {
-        console.error("Eroare la salvarea examenului.");
-      }
-    } catch (error) {
-      console.error("Eroare la trimiterea cererii POST:", error);
-    }
+    setTimeout(() => {
+      router.push("/teacherpage");
+    }, 800);
   };
 
   return (
@@ -190,18 +71,16 @@ export default function ExamenProfesor() {
             <table>
               <thead>
                 <tr>
-                  <th>Facultate</th>
-                  <th>Profesor</th>
-                  <th>Materie</th>
+                  <th>Obiect</th>
                   <th>Data</th>
+                  <th>Grupa</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>{facultyName || "Exemplu Facultate"}</td>
-                  <td>{professorName || "Exemplu Profesor"}</td>
-                  <td>{subjectName || "Exemplu Materie"}</td>
-                  <td>{examDate.format("YYYY-MM-DD") || "Exemplu Data"}</td>
+                  <td>{queryParams.name || "Exemplu Materie"}</td>
+                  <td>{queryParams.data || "Exemplu Data"}</td>
+                  <td>{queryParams.grupa || "Exemplu Grupa"}</td>
                 </tr>
               </tbody>
             </table>
@@ -217,14 +96,9 @@ export default function ExamenProfesor() {
                 <option value="" disabled>
                   Asistent de profesor
                 </option>
-                {professors.map((assistant) => (
-                  <option
-                    key={assistant.id_Profesor} // Folosește id_Profesor pentru a asigura unicitatea
-                    value={assistant.id_Profesor} // Folosește id_Profesor
-                  >
-                    {assistant.nume} {/* Afișezi numele asistentului */}
-                  </option>
-                ))}
+                <option value="Prof. A">Prof. A</option>
+                <option value="Prof. B">Prof. B</option>
+                <option value="Prof. C">Prof. C</option>
               </select>
             </div>
 
@@ -237,11 +111,9 @@ export default function ExamenProfesor() {
                 <option value="" disabled>
                   Sala
                 </option>
-                {rooms.map((room) => (
-                  <option key={room.id_Sala} value={room.id_Sala}>
-                    {getNameById(room.id_Sala, rooms, "id_Sala")}
-                  </option>
-                ))}
+                <option value="Room 101">Room 101</option>
+                <option value="Room 202">Room 202</option>
+                <option value="Room 303">Room 303</option>
               </select>
             </div>
 
@@ -254,11 +126,9 @@ export default function ExamenProfesor() {
                 <option value="" disabled>
                   Ora
                 </option>
-                {times.map((time) => (
-                  <option key={time} value={time}>
-                    {time}
-                  </option>
-                ))}
+                <option value="09:00">09:00</option>
+                <option value="11:00">11:00</option>
+                <option value="13:00">13:00</option>
               </select>
             </div>
           </div>
@@ -278,9 +148,18 @@ export default function ExamenProfesor() {
         autoHideDuration={3000}
         onClose={() => setMessage("")}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        key={"topcenter"}
+        sx={{ backgroundColor: "#192041", marginTop: "150px" }}
       >
-        <Alert severity="success" sx={{ width: "100%" }}>
+        <Alert
+          onClose={() => setMessage("")}
+          severity="success"
+          sx={{
+            backgroundColor: "#192041",
+            color: "#ffffff",
+            fontSize: "18px",
+            padding: "16px",
+          }}
+        >
           {message}
         </Alert>
       </Snackbar>
