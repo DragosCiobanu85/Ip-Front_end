@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import * as React from "react";
-import { useState, useEffect } from "react";
+import {useState, useEffect} from "react";
 import Button from "@mui/material/Button";
-import { styled } from "@mui/material/styles";
+import {styled} from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
-import TableCell, { tableCellClasses } from "@mui/material/TableCell";
+import TableCell, {tableCellClasses} from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
@@ -16,12 +16,12 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import { Exam, useExams } from "../context/examcontext";
-import { useRouter } from "next/navigation";
-import { Token } from "@mui/icons-material";
+import {Exam, useExams} from "../context/examcontext";
+import {useRouter} from "next/navigation";
+import {Token} from "@mui/icons-material";
 
 // Styled components
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
+const StyledTableCell = styled(TableCell)(({theme}) => ({
   [`&.${tableCellClasses.head}`]: {
     backgroundColor: "#d3d3d3",
     color: "#000",
@@ -31,7 +31,7 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   },
 }));
 
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
+const StyledTableRow = styled(TableRow)(({theme}) => ({
   "&:nth-of-type(odd)": {
     backgroundColor: theme.palette.action.hover,
   },
@@ -39,10 +39,21 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
     border: 0,
   },
 }));
+const getStatusStyle = (status: string): React.CSSProperties => {
+  switch (status) {
+    case "acceptata":
+      return {color: "green", fontWeight: "bold"};
+    case "respinsa":
+      return {color: "red", fontWeight: "bold"};
+    case "in asteptare":
+      return {color: "orange", fontWeight: "bold"};
+    default:
+      return {};
+  }
+};
 
 export default function StudentAccount() {
-  const { studentExams, removeExamFromStudent, removeExamFromTeacher } =
-    useExams();
+  const {studentExams, removeExamFromStudent, removeExamFromTeacher} = useExams();
   const [rows, setRows] = useState<any[]>([]); // To store exams fetched from API
   const [openDialog, setOpenDialog] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
@@ -96,12 +107,8 @@ export default function StudentAccount() {
       try {
         // Fetch data from API
         const facultyResponse = await fetch("http://127.0.0.1:8000/facultati/");
-        const professorResponse = await fetch(
-          "http://127.0.0.1:8000/profesori/profesori/"
-        );
-        const subjectResponse = await fetch(
-          "http://127.0.0.1:8000/materii/materii/"
-        );
+        const professorResponse = await fetch("http://127.0.0.1:8000/profesori/profesori/");
+        const subjectResponse = await fetch("http://127.0.0.1:8000/materii/materii/");
 
         if (facultyResponse.ok && professorResponse.ok && subjectResponse.ok) {
           const facultyData = await facultyResponse.json();
@@ -138,18 +145,13 @@ export default function StudentAccount() {
   const confirmDelete = async () => {
     if (examToDelete !== null) {
       try {
-        const response = await fetch(
-          `http://127.0.0.1:8000/cereri/cereri/${examToDelete}`,
-          {
-            method: "DELETE",
-          }
-        );
+        const response = await fetch(`http://127.0.0.1:8000/cereri/cereri/${examToDelete}`, {
+          method: "DELETE",
+        });
 
         if (response.ok) {
           // Remove the exam from the state and UI
-          setRows((prevRows) =>
-            prevRows.filter((exam) => exam.id_Cerere !== examToDelete)
-          );
+          setRows((prevRows) => prevRows.filter((exam) => exam.id_Cerere !== examToDelete));
 
           // Optionally, remove from context if needed
           removeExamFromStudent(examToDelete);
@@ -187,7 +189,7 @@ export default function StudentAccount() {
 
   return (
     <>
-      <Link href={`/examen`} style={{ textDecoration: "none" }}>
+      <Link href={`/examen`} style={{textDecoration: "none"}}>
         <Button
           variant="outlined"
           type="submit"
@@ -204,8 +206,7 @@ export default function StudentAccount() {
             height: "55px",
             marginBottom: "30px",
             width: "350px",
-          }}
-        >
+          }}>
           Programare examen
         </Button>
       </Link>
@@ -217,31 +218,21 @@ export default function StudentAccount() {
           marginRight: "42px",
           maxWidth: "calc(100% - 84px)",
           margin: "0 auto",
-        }}
-      >
-        <Table
-          sx={{ minWidth: 700 }}
-          aria-label="customized table"
-          style={{ tableLayout: "fixed" }}
-        >
+        }}>
+        <Table sx={{minWidth: 700}} aria-label="customized table" style={{tableLayout: "fixed"}}>
           <TableHead>
             <TableRow>
-              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
+              <StyledTableCell style={{width: "20%", textAlign: "center"}}>
                 Facultate
               </StyledTableCell>
-              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
+              <StyledTableCell style={{width: "20%", textAlign: "center"}}>
                 Profesor
               </StyledTableCell>
-              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
-                Materie
-              </StyledTableCell>
-              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
-                Data
-              </StyledTableCell>
+              <StyledTableCell style={{width: "20%", textAlign: "center"}}>Materie</StyledTableCell>
+              <StyledTableCell style={{width: "20%", textAlign: "center"}}>Data</StyledTableCell>
+              <StyledTableCell style={{width: "20%", textAlign: "center"}}>Status</StyledTableCell>
 
-              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
-                Acțiune
-              </StyledTableCell>
+              <StyledTableCell style={{width: "20%", textAlign: "center"}}>Acțiune</StyledTableCell>
             </TableRow>
           </TableHead>
 
@@ -249,11 +240,7 @@ export default function StudentAccount() {
             {rows.map((row) => (
               <StyledTableRow key={row.id_Cerere}>
                 {/* Facultate */}
-                <StyledTableCell
-                  component="th"
-                  scope="row"
-                  style={{ textAlign: "center" }}
-                >
+                <StyledTableCell component="th" scope="row" style={{textAlign: "center"}}>
                   {getNameById(row.id_Facultate, faculties, "id_Facultate")}
                 </StyledTableCell>
 
@@ -271,7 +258,10 @@ export default function StudentAccount() {
                 <StyledTableCell align="center">
                   {new Date(row.data).toLocaleDateString()}
                 </StyledTableCell>
-
+                {/* Statusul cererii */}
+                <StyledTableCell align="center" style={getStatusStyle(row.status)}>
+                  {row.status} {/* Afișăm statusul */}
+                </StyledTableCell>
                 {/* Acțiune */}
                 <StyledTableCell align="center">
                   <div
@@ -279,12 +269,8 @@ export default function StudentAccount() {
                       display: "flex",
                       justifyContent: "space-around",
                       gap: "0 10px",
-                    }}
-                  >
-                    <Button
-                      variant="outlined"
-                      onClick={() => handleModifyClick(row)}
-                    >
+                    }}>
+                    <Button variant="outlined" onClick={() => handleModifyClick(row)}>
                       Modifică
                     </Button>
                     <Button
@@ -294,8 +280,7 @@ export default function StudentAccount() {
                         marginLeft: "10px",
                         backgroundColor: "#FF0000",
                         color: "white",
-                      }}
-                    >
+                      }}>
                       Anulează
                     </Button>
                   </div>
@@ -320,8 +305,7 @@ export default function StudentAccount() {
             sx={{
               backgroundColor: "red",
               color: "#fff",
-            }}
-          >
+            }}>
             Confirmă
           </Button>
         </DialogActions>

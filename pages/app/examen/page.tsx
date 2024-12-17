@@ -1,15 +1,15 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { useExams } from "../context/examcontext";
-import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import React, {useState, useEffect} from "react";
+import {useExams} from "../context/examcontext";
+import {DateCalendar} from "@mui/x-date-pickers/DateCalendar";
 import dayjs from "dayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { useSearchParams, useRouter } from "next/navigation";
+import {LocalizationProvider} from "@mui/x-date-pickers";
+import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
+import {useSearchParams, useRouter} from "next/navigation";
 import "./app.css";
 
 export default function ProgramareExamen() {
-  const { addExamToTeacher, addExamsToStudentPage, updateExam } = useExams();
+  const {addExamToTeacher, addExamsToStudentPage, updateExam} = useExams();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -21,15 +21,9 @@ export default function ProgramareExamen() {
   const [status, setStatus] = useState("");
   const today = dayjs();
 
-  const [materii, setMaterii] = useState<
-    Array<{ id_Materie: number; nume: string }>
-  >([]);
-  const [profesori, setProfesori] = useState<
-    Array<{ id_Profesor: number; nume: string }>
-  >([]);
-  const [facultati, setFacultati] = useState<
-    Array<{ id_Facultate: number; nume: string }>
-  >([]);
+  const [materii, setMaterii] = useState<Array<{id_Materie: number; nume: string}>>([]);
+  const [profesori, setProfesori] = useState<Array<{id_Profesor: number; nume: string}>>([]);
+  const [facultati, setFacultati] = useState<Array<{id_Facultate: number; nume: string}>>([]);
 
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
   const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false);
@@ -52,9 +46,7 @@ export default function ProgramareExamen() {
   useEffect(() => {
     const fetchMaterii = async () => {
       try {
-        const response = await fetchWithAuth(
-          "http://127.0.0.1:8000/materii/materii/"
-        );
+        const response = await fetchWithAuth("http://127.0.0.1:8000/materii/materii/");
         if (response.ok) {
           const data = await response.json();
           setMaterii(data);
@@ -68,9 +60,7 @@ export default function ProgramareExamen() {
 
     const fetchProfesori = async () => {
       try {
-        const response = await fetchWithAuth(
-          "http://127.0.0.1:8000/profesori/profesori/"
-        );
+        const response = await fetchWithAuth("http://127.0.0.1:8000/profesori/profesori/");
         if (response.ok) {
           const data = await response.json();
           setProfesori(data);
@@ -84,9 +74,7 @@ export default function ProgramareExamen() {
 
     const fetchFacultati = async () => {
       try {
-        const response = await fetchWithAuth(
-          "http://127.0.0.1:8000/facultati/"
-        );
+        const response = await fetchWithAuth("http://127.0.0.1:8000/facultati/");
         if (response.ok) {
           const data = await response.json();
           setFacultati(data);
@@ -136,7 +124,7 @@ export default function ProgramareExamen() {
       id_Profesor: professor,
       id_Facultate: faculty,
       data: date.format("YYYY-MM-DD"),
-      status: status,
+      status: "in asteptare",
     };
 
     try {
@@ -175,18 +163,14 @@ export default function ProgramareExamen() {
 
       <form
         className="flex flex-col gap-10 px-20 mt-20 w-full text-2xl font-medium text-blue-950 max-md:px-5 max-md:mt-10"
-        onSubmit={handleSubmit}
-      >
+        onSubmit={handleSubmit}>
         {/* Materie */}
         <div className="flex flex-col gap-6">
           <div className="relative">
             <button
               type="button"
-              onClick={() =>
-                setIsSubjectDropdownOpen((prevState) => !prevState)
-              }
-              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-            >
+              onClick={() => setIsSubjectDropdownOpen((prevState) => !prevState)}
+              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow">
               {subject !== null
                 ? materii.find((item) => item.id_Materie === subject)?.nume
                 : "Selectează Materia"}
@@ -198,10 +182,7 @@ export default function ProgramareExamen() {
                   <li
                     key={option.id_Materie}
                     className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                    onClick={() =>
-                      handleSubjectSelection(option.id_Materie, option.nume)
-                    }
-                  >
+                    onClick={() => handleSubjectSelection(option.id_Materie, option.nume)}>
                     {option.nume}
                   </li>
                 ))}
@@ -215,11 +196,8 @@ export default function ProgramareExamen() {
           <div className="relative">
             <button
               type="button"
-              onClick={() =>
-                setIsProfessorDropdownOpen((prevState) => !prevState)
-              }
-              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-            >
+              onClick={() => setIsProfessorDropdownOpen((prevState) => !prevState)}
+              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow">
               {professor !== null
                 ? profesori.find((item) => item.id_Profesor === professor)?.nume
                 : "Selectează Profesorul"}
@@ -231,10 +209,7 @@ export default function ProgramareExamen() {
                   <li
                     key={option.id_Profesor}
                     className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                    onClick={() =>
-                      handleProfessorSelection(option.id_Profesor, option.nume)
-                    }
-                  >
+                    onClick={() => handleProfessorSelection(option.id_Profesor, option.nume)}>
                     {option.nume}
                   </li>
                 ))}
@@ -248,11 +223,8 @@ export default function ProgramareExamen() {
           <div className="relative">
             <button
               type="button"
-              onClick={() =>
-                setIsFacultyDropdownOpen((prevState) => !prevState)
-              }
-              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-            >
+              onClick={() => setIsFacultyDropdownOpen((prevState) => !prevState)}
+              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow">
               {faculty !== null
                 ? facultati.find((item) => item.id_Facultate === faculty)?.nume
                 : "Selectează Facultatea"}
@@ -264,10 +236,7 @@ export default function ProgramareExamen() {
                   <li
                     key={option.id_Facultate}
                     className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                    onClick={() =>
-                      handleFacultySelection(option.id_Facultate, option.nume)
-                    }
-                  >
+                    onClick={() => handleFacultySelection(option.id_Facultate, option.nume)}>
                     {option.nume}
                   </li>
                 ))}
@@ -281,8 +250,7 @@ export default function ProgramareExamen() {
           <button
             type="button"
             onClick={() => setIsCalendarOpen((prev) => !prev)}
-            className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-          >
+            className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow">
             {date ? date.format("DD/MM/YYYY") : "Selectează Data"}
           </button>
           {isCalendarOpen && (
@@ -299,10 +267,7 @@ export default function ProgramareExamen() {
         </div>
 
         {/* Submit Button */}
-        <button
-          type="submit"
-          className="self-center w-60 py-3 mt-5 text-white bg-blue-950 rounded"
-        >
+        <button type="submit" className="self-center w-60 py-3 mt-5 text-white bg-blue-950 rounded">
           Trimite cererea
         </button>
       </form>

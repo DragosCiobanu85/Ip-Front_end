@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect} from "react";
 import Button from "@mui/material/Button";
-import { styled } from "@mui/material/styles";
+import {styled} from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
-import TableCell, { tableCellClasses } from "@mui/material/TableCell";
+import TableCell, {tableCellClasses} from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
@@ -14,10 +14,10 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import { Exam, useExams } from "../context/examcontext";
-import { useRouter } from "next/navigation";
+import {Exam, useExams} from "../context/examcontext";
+import {useRouter} from "next/navigation";
 
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
+const StyledTableCell = styled(TableCell)(({theme}) => ({
   [`&.${tableCellClasses.head}`]: {
     backgroundColor: "#d3d3d3",
     color: "#000",
@@ -27,7 +27,7 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   },
 }));
 
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
+const StyledTableRow = styled(TableRow)(({theme}) => ({
   "&:nth-of-type(odd)": {
     backgroundColor: theme.palette.action.hover,
   },
@@ -53,45 +53,39 @@ export default function RequestsTable() {
       const token = localStorage.getItem("auth_token"); // Obține token-ul din localStorage
       console.log("Token:", token); // Log token pentru a verifica
 
-      const [
-        requestsRes,
-        facultiesRes,
-        professorsRes,
-        subjectsRes,
-        studentsRes,
-        groupsRes,
-      ] = await Promise.all([
-        fetch("http://127.0.0.1:8000/cereri/cereri/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch("http://127.0.0.1:8000/facultati/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch("http://127.0.0.1:8000/profesori/profesori/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch("http://127.0.0.1:8000/materii/materii/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch("http://127.0.0.1:8000/studenti/studenti/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch("http://127.0.0.1:8000/grupe/grupe/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-      ]);
+      const [requestsRes, facultiesRes, professorsRes, subjectsRes, studentsRes, groupsRes] =
+        await Promise.all([
+          fetch("http://127.0.0.1:8000/cereri/cereri/", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          fetch("http://127.0.0.1:8000/facultati/", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          fetch("http://127.0.0.1:8000/profesori/profesori/", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          fetch("http://127.0.0.1:8000/materii/materii/", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          fetch("http://127.0.0.1:8000/studenti/studenti/", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          fetch("http://127.0.0.1:8000/grupe/grupe/", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+        ]);
 
       // Verifică statusul și loghează răspunsurile
       if (requestsRes.ok) {
@@ -170,19 +164,63 @@ export default function RequestsTable() {
     setRequestToDelete(id);
     setOpenDialog(true);
   };
+  const handleAccept = async (id: number) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`http://127.0.0.1:8000/cereri/cereri/${id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({status: "acceptata"}),
+      });
+
+      if (response.ok) {
+        setRows((prevRows) =>
+          prevRows.map((row) => (row.id_Cerere === id ? {...row, status: "acceptata"} : row))
+        );
+      } else {
+        console.error("Failed to update status.");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`http://127.0.0.1:8000/cereri/cereri/${id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({status: "respinsa"}),
+      });
+
+      if (response.ok) {
+        setRows((prevRows) =>
+          prevRows.map((row) => (row.id_Cerere === id ? {...row, status: "respinsa"} : row))
+        );
+      } else {
+        console.error("Failed to update status.");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+    }
+  };
 
   const confirmDelete = async () => {
     if (requestToDelete !== null) {
       try {
-        const response = await fetch(
-          `http://127.0.0.1:8000/cereri/cereri/${requestToDelete}/`,
-          { method: "DELETE" }
-        );
+        const response = await fetch(`http://127.0.0.1:8000/cereri/cereri/${requestToDelete}/`, {
+          method: "DELETE",
+        });
 
         if (response.ok) {
-          setRows((prevRows) =>
-            prevRows.filter((row) => row.id_Cerere !== requestToDelete)
-          );
+          setRows((prevRows) => prevRows.filter((row) => row.id_Cerere !== requestToDelete));
         } else {
           console.error("Failed to delete request.");
         }
@@ -199,45 +237,44 @@ export default function RequestsTable() {
 
   return (
     <div>
-      <h1 style={{ textAlign: "center", margin: "50px 0" }}>Cereri Examene</h1>
-      <div
-        style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}
-      >
+      <h1 style={{textAlign: "center", margin: "50px 0"}}>Cereri Examene</h1>
+      <div style={{display: "flex", justifyContent: "center", marginTop: "20px"}}>
         <TableContainer
           component={Paper}
           style={{
             maxWidth: "95%", // Setează lățimea maximă a tabelului
             margin: "auto", // Centrează tabelul
             boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", // Adaugă o umbră discretă
-          }}
-        >
+          }}>
           <Table
             aria-label="customized table"
             style={{
               tableLayout: "fixed", // Forțează coloanele să aibă dimensiuni fixe
               width: "100%", // Asigură că tabelul ocupă întreaga lățime disponibilă
-            }}
-          >
+            }}>
             <TableHead>
               <TableRow>
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{width: "14%"}}>
                   Facultate
                 </StyledTableCell>
 
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{width: "14%"}}>
                   Studentul care a facut cererea
                 </StyledTableCell>
-                <StyledTableCell align="center" style={{ width: "13%" }}>
+                <StyledTableCell align="center" style={{width: "13%"}}>
                   Grupa din care face parte studentul
                 </StyledTableCell>
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{width: "14%"}}>
                   Materie
                 </StyledTableCell>
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{width: "14%"}}>
                   Data
                 </StyledTableCell>
+                <StyledTableCell align="center" style={{width: "14%"}}>
+                  Status
+                </StyledTableCell>
 
-                <StyledTableCell align="center" style={{ width: "17%" }}>
+                <StyledTableCell align="center" style={{width: "17%"}}>
                   Acțiuni
                 </StyledTableCell>
               </TableRow>
@@ -264,25 +301,26 @@ export default function RequestsTable() {
                       {new Date(row.data).toLocaleDateString()}
                     </StyledTableCell>
                     <StyledTableCell align="center">
+                      {row.status || "N/A"} {/* Afișează statusul cererii */}
+                    </StyledTableCell>
+
+                    <StyledTableCell align="center">
                       <div
                         style={{
                           display: "flex",
                           justifyContent: "space-around",
                           gap: "0 10px",
-                        }}
-                      >
+                        }}>
                         <Button
                           variant="outlined"
                           color="success"
-                          onClick={() => handleModify(row)}
-                        >
+                          onClick={() => handleModify(row)}>
                           Acceptă
                         </Button>
                         <Button
                           variant="outlined"
                           color="error"
-                          onClick={() => handleCancel(row.id_Cerere)}
-                        >
+                          onClick={() => handleCancel(row.id_Cerere)}>
                           Anulează
                         </Button>
                       </div>
