@@ -19,7 +19,6 @@ export default function ProgramareExamen() {
   const [faculty, setFaculty] = useState<number | null>(null);
   const [date, setDate] = useState<dayjs.Dayjs | null>(null);
   const [status, setStatus] = useState("");
-  const today = dayjs();
 
   const [materii, setMaterii] = useState<
     Array<{ id_Materie: number; nume: string }>
@@ -36,28 +35,14 @@ export default function ProgramareExamen() {
   const [isFacultyDropdownOpen, setIsFacultyDropdownOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const token = localStorage.getItem("auth_token");
-  console.log("Token-ul din localStorage:", token); // Obține token-ul din localStorage
-
-  const fetchWithAuth = async (url: string) => {
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`, // Adaugă token-ul în antet
-        "Content-Type": "application/json",
-      },
-    });
-    return response;
-  };
-
+  // Fetch materiile din backend
   useEffect(() => {
     const fetchMaterii = async () => {
       try {
-        const response = await fetchWithAuth(
-          "http://127.0.0.1:8000/materii/materii/"
-        );
+        const response = await fetch("http://127.0.0.1:8000/materii/materii/");
         if (response.ok) {
           const data = await response.json();
-          setMaterii(data);
+          setMaterii(data); // setez materiile in state
         } else {
           console.error("Eroare la încărcarea materiilor");
         }
@@ -68,12 +53,12 @@ export default function ProgramareExamen() {
 
     const fetchProfesori = async () => {
       try {
-        const response = await fetchWithAuth(
+        const response = await fetch(
           "http://127.0.0.1:8000/profesori/profesori/"
         );
         if (response.ok) {
           const data = await response.json();
-          setProfesori(data);
+          setProfesori(data); // setez profesorii in state
         } else {
           console.error("Eroare la încărcarea profesorilor");
         }
@@ -84,12 +69,10 @@ export default function ProgramareExamen() {
 
     const fetchFacultati = async () => {
       try {
-        const response = await fetchWithAuth(
-          "http://127.0.0.1:8000/facultati/"
-        );
+        const response = await fetch("http://127.0.0.1:8000/facultati/");
         if (response.ok) {
           const data = await response.json();
-          setFacultati(data);
+          setFacultati(data); // setez facultățile in state
         } else {
           console.error("Eroare la încărcarea facultăților");
         }
@@ -101,7 +84,31 @@ export default function ProgramareExamen() {
     fetchMaterii();
     fetchProfesori();
     fetchFacultati();
-  }, [token]);
+  }, []);
+
+  useEffect(() => {
+    const examQuery = searchParams.get("exam");
+    if (examQuery) {
+      const exam = JSON.parse(decodeURIComponent(examQuery));
+      setProfessor(exam.id_Profesor);
+      setFaculty(exam.id_Facultate);
+      setSubject(exam.id_Materie);
+      setDate(dayjs(exam.data));
+      setStatus(exam.status);
+    }
+  }, [searchParams]);
+
+  const toggleSubjectDropdown = () => {
+    setIsSubjectDropdownOpen((prevState) => !prevState);
+  };
+
+  const toggleProfessorDropdown = () => {
+    setIsProfessorDropdownOpen((prevState) => !prevState);
+  };
+
+  const toggleFacultyDropdown = () => {
+    setIsFacultyDropdownOpen((prevState) => !prevState);
+  };
 
   const handleSubjectSelection = (id_Materie: number, nume: string) => {
     setSubject(id_Materie);
@@ -139,22 +146,25 @@ export default function ProgramareExamen() {
       status: status,
     };
 
+    console.log(newExam); // Verifică obiectul trimis
+
     try {
       const response = await fetch("http://127.0.0.1:8000/cereri/cereri/", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Adaugă token-ul în antet
+          "Content-Type": "application/json", // Indică că trimitem JSON
         },
-        body: JSON.stringify(newExam),
+        body: JSON.stringify(newExam), // Trimite obiectul examenului în corpul cererii
       });
 
       if (!response.ok) {
         throw new Error("Eroare la crearea cererii de examen!");
       }
 
+      const data = await response.json();
+
       alert("Cererea de examen a fost trimisă cu succes!");
-      router.push("/studentpage");
+      router.push("/studentpage"); // Redirecționează utilizatorul
     } catch (error) {
       console.error("Eroare la comunicarea cu serverul:", error);
       alert("A apărut o eroare. Te rugăm să încerci din nou.");
@@ -182,9 +192,7 @@ export default function ProgramareExamen() {
           <div className="relative">
             <button
               type="button"
-              onClick={() =>
-                setIsSubjectDropdownOpen((prevState) => !prevState)
-              }
+              onClick={toggleSubjectDropdown}
               className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
             >
               {subject !== null
@@ -215,9 +223,7 @@ export default function ProgramareExamen() {
           <div className="relative">
             <button
               type="button"
-              onClick={() =>
-                setIsProfessorDropdownOpen((prevState) => !prevState)
-              }
+              onClick={toggleProfessorDropdown}
               className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
             >
               {professor !== null
@@ -248,9 +254,7 @@ export default function ProgramareExamen() {
           <div className="relative">
             <button
               type="button"
-              onClick={() =>
-                setIsFacultyDropdownOpen((prevState) => !prevState)
-              }
+              onClick={toggleFacultyDropdown}
               className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
             >
               {faculty !== null
@@ -288,11 +292,7 @@ export default function ProgramareExamen() {
           {isCalendarOpen && (
             <div className="absolute z-10 mt-2 w-full bg-white shadow-md">
               <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateCalendar
-                  value={date}
-                  onChange={handleDateChange}
-                  shouldDisableDate={(date) => date.isBefore(dayjs(), "day")}
-                />
+                <DateCalendar value={date} onChange={handleDateChange} />
               </LocalizationProvider>
             </div>
           )}
@@ -301,9 +301,9 @@ export default function ProgramareExamen() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="self-center w-60 py-3 mt-5 text-white bg-blue-950 rounded"
+          className="self-center px-6 py-2 bg-blue-600 text-white rounded-lg shadow"
         >
-          Trimite cererea
+          Trimite Cererea
         </button>
       </form>
     </main>

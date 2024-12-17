@@ -41,123 +41,47 @@ export default function RequestsTable() {
   const [faculties, setFaculties] = useState<any[]>([]);
   const [professors, setProfessors] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
-  const [groups, setGroups] = useState<any[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [requestToDelete, setRequestToDelete] = useState<number | null>(null);
   const router = useRouter();
 
   // Fetch data for requests, faculties, professors, and subjects
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem("auth_token"); // Obține token-ul din localStorage
-      console.log("Token:", token); // Log token pentru a verifica
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [requestsRes, facultiesRes, professorsRes, subjectsRes] =
+          await Promise.all([
+            fetch("http://127.0.0.1:8000/cereri/cereri/"),
+            fetch("http://127.0.0.1:8000/facultati/"),
+            fetch("http://127.0.0.1:8000/profesori/profesori/"),
+            fetch("http://127.0.0.1:8000/materii/materii/"),
+          ]);
 
-      const [
-        requestsRes,
-        facultiesRes,
-        professorsRes,
-        subjectsRes,
-        studentsRes,
-        groupsRes,
-      ] = await Promise.all([
-        fetch("http://127.0.0.1:8000/cereri/cereri/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch("http://127.0.0.1:8000/facultati/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch("http://127.0.0.1:8000/profesori/profesori/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch("http://127.0.0.1:8000/materii/materii/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch("http://127.0.0.1:8000/studenti/studenti/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch("http://127.0.0.1:8000/grupe/grupe/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-      ]);
+        if (
+          requestsRes.ok &&
+          facultiesRes.ok &&
+          professorsRes.ok &&
+          subjectsRes.ok
+        ) {
+          setRows(await requestsRes.json());
+          setFaculties(await facultiesRes.json());
+          setProfessors(await professorsRes.json());
+          setSubjects(await subjectsRes.json());
+        } else {
+          console.error("Failed to fetch one or more data sources.");
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
 
-      // Verifică statusul și loghează răspunsurile
-      if (requestsRes.ok) {
-        const requestsData = await requestsRes.json();
-        console.log("Cereri:", requestsData); // Log date cereri
-        setRows(requestsData);
-      } else {
-        console.error("Eroare la cereri:", requestsRes.status);
-      }
-
-      if (facultiesRes.ok) {
-        const facultiesData = await facultiesRes.json();
-        console.log("Facultăți:", facultiesData); // Log date facultăți
-        setFaculties(facultiesData);
-      } else {
-        console.error("Eroare la facultăți:", facultiesRes.status);
-      }
-
-      if (professorsRes.ok) {
-        const professorsData = await professorsRes.json();
-        console.log("Profesori:", professorsData); // Log date profesori
-        setProfessors(professorsData);
-      } else {
-        console.error("Eroare la profesori:", professorsRes.status);
-      }
-
-      if (subjectsRes.ok) {
-        const subjectsData = await subjectsRes.json();
-        console.log("Materii:", subjectsData); // Log date materii
-        setSubjects(subjectsData);
-      } else {
-        console.error("Eroare la materii:", subjectsRes.status);
-      }
-      if (studentsRes.ok) {
-        const studentsData = await studentsRes.json();
-        console.log("Studenti:", studentsData); // Log date materii
-        setStudents(studentsData);
-      } else {
-        console.error("Eroare la materii:", studentsRes.status);
-      }
-
-      if (groupsRes.ok) {
-        const groupsData = await groupsRes.json();
-        console.log("Grupe sunt acestea gggggggg:", groupsData); // Log date materii
-        setGroups(groupsData);
-      } else {
-        console.error("Eroare la materii:", groupsRes.status);
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error); // Log error general
-    }
-  };
+    fetchData();
+  }, []);
 
   // Helper function to map ID to name
   const getNameById = (id: number, data: any[], key: string) => {
-    console.log("Căutăm id:", id); // Log pentru id-ul căutat
-    console.log("Datele disponibile:", data); // Log pentru datele complete disponibile
-
-    const item = data.find((entry) => {
-      console.log(`Comparăm ${entry[key]} cu ${id}`);
-      return entry[key] === id;
-    });
-
-    console.log("Obiect găsit:", item); // Log pentru obiectul găsit
-
-    return item ? item.nume : "N/A"; // Returnează numele sau "N/A"
+    const item = data.find((entry) => entry[key] === id);
+    return item ? item.nume : "N/A";
   };
 
   const handleModify = (exam: Exam) => {
@@ -193,9 +117,6 @@ export default function RequestsTable() {
       }
     }
   };
-  useEffect(() => {
-    fetchData(); // Apelăm funcția la montarea componentei
-  }, []);
 
   return (
     <div>
@@ -220,76 +141,67 @@ export default function RequestsTable() {
           >
             <TableHead>
               <TableRow>
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{ width: "15%" }}>
                   Facultate
                 </StyledTableCell>
-
-                <StyledTableCell align="center" style={{ width: "14%" }}>
-                  Studentul care a facut cererea
+                <StyledTableCell align="center" style={{ width: "15%" }}>
+                  Profesor
                 </StyledTableCell>
-                <StyledTableCell align="center" style={{ width: "13%" }}>
-                  Grupa din care face parte studentul
-                </StyledTableCell>
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{ width: "15%" }}>
                   Materie
                 </StyledTableCell>
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{ width: "15%" }}>
                   Data
                 </StyledTableCell>
 
-                <StyledTableCell align="center" style={{ width: "17%" }}>
+                <StyledTableCell align="center" style={{ width: "25%" }}>
                   Acțiuni
                 </StyledTableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((row) => {
-                console.log("Row current:", row); // Log pentru obiectul complet
+              {rows.map((row) => (
+                <StyledTableRow key={row.id_Cerere}>
+                  <StyledTableCell align="center">
+                    {getNameById(row.id_Facultate, faculties, "id_Facultate")}
+                  </StyledTableCell>
+                  <StyledTableCell align="center">
+                    {getNameById(row.id_Profesor, professors, "id_Profesor")}
+                  </StyledTableCell>
+                  <StyledTableCell align="center">
+                    {getNameById(row.id_Materie, subjects, "id_Materie")}
+                  </StyledTableCell>
+                  <StyledTableCell align="center">
+                    {new Date(row.data).toLocaleDateString()}
+                  </StyledTableCell>
 
-                return (
-                  <StyledTableRow key={row.id_Cerere}>
-                    <StyledTableCell align="center">
-                      {getNameById(row.id_Facultate, faculties, "id_Facultate")}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {getNameById(row.id_Student, students, "id_Student")}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {getNameById(row.id_Grupa, groups, "id_Grupa")}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {getNameById(row.id_Materie, subjects, "id_Materie")}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {new Date(row.data).toLocaleDateString()}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-around",
-                          gap: "0 10px",
-                        }}
-                      >
-                        <Button
-                          variant="outlined"
-                          color="success"
-                          onClick={() => handleModify(row)}
-                        >
-                          Acceptă
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          onClick={() => handleCancel(row.id_Cerere)}
-                        >
-                          Anulează
-                        </Button>
-                      </div>
-                    </StyledTableCell>
-                  </StyledTableRow>
-                );
-              })}
+                  <StyledTableCell align="center">
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => handleModify(row)}
+                      style={{ marginRight: "10px" }}
+                    >
+                      Modifică
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="success"
+                      onClick={() => handleModify(row.id_Cerere)}
+                      style={{ marginRight: "10px" }}
+                    >
+                      Acceptă
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleCancel(row.id_Cerere)}
+                    >
+                      Anulează
+                    </Button>
+                  </StyledTableCell>
+                </StyledTableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
