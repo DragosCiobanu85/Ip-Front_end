@@ -6,32 +6,18 @@ import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
-import { jwtDecode } from "jwt-decode";
-
-// Definirea tipului pentru payload-ul token-ului
-interface CustomJwtPayload {
-  rol: string; // Definește 'role' conform cu ce ai în token
-  exp: number; // Exemplu: un câmp 'exp' pentru expirarea token-ului
-}
-
-// Funcția de salvare a token-ului
-const saveToken = (token: string) => {
-  localStorage.setItem("auth_token", token); // Salvează token-ul în localStorage
-  console.log("Token saved:", token); // Verifică dacă token-ul este salvat
-};
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
   const router = useRouter();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -42,52 +28,18 @@ export default function Login() {
       setEmailError("");
     }
 
-    try {
-      const response = await fetch("http://127.0.0.1:8000/useri/users/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          parola: password,
-        }),
-      });
+    const emailDomain = email.split("@")[1];
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Salvează token-ul în localStorage
-        const token = data.access_token;
-        saveToken(token); // Apelează funcția saveToken pentru a salva token-ul
-
-        if (token) {
-          try {
-            const decodedToken = jwtDecode<CustomJwtPayload>(token);
-            console.log("Decoded token:", decodedToken); // Adaugă acest log pentru a verifica structura token-ului
-
-            const role = decodedToken.rol;
-            console.log("Role:", role); // Verifică dacă rolul există în decodedToken
-
-            if (role === "Student") {
-              router.push("/studentpage");
-            } else if (role === "Profesor") {
-              router.push("/teacherpage");
-            } else {
-              console.error("Rolul nu este recunoscut");
-            }
-          } catch (error) {
-            console.error("Token invalid sau eroare la decodificare:", error);
-          }
-        }
-      } else {
-        // Dacă login-ul a eșuat
-        setPasswordError(data.message || "Email sau parolă incorectă.");
-      }
-    } catch (error) {
-      console.error("Eroare la trimiterea cererii de login:", error);
-      setPasswordError("A apărut o eroare la autentificare.");
+    if (emailDomain === "student.usv.ro") {
+      router.push("/studentpage");
+    } else if (emailDomain === "usm.ro") {
+      router.push("/teacherpage");
+    } else {
+      setEmailError("Introdu te rog o adresa de student sau de profesor ");
     }
+
+    console.log("Email:", email);
+    console.log("Password:", password);
   };
 
   return (
@@ -113,6 +65,7 @@ export default function Login() {
         >
           Programare examene
         </h1>
+
         <h1
           style={{
             fontSize: "2rem",
@@ -190,8 +143,6 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            error={!!passwordError}
-            helperText={passwordError}
             sx={{
               "& .MuiOutlinedInput-root": {
                 "& fieldset": {

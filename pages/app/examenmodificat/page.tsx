@@ -138,10 +138,6 @@ export default function ModificareExamen() {
     }
     return "Selectează Materia";
   };
-  const handleDateChange = (newDate: dayjs.Dayjs | null) => {
-    setDate(newDate);
-    setIsCalendarOpen(false); // Close the calendar after selecting the date
-  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -166,19 +162,11 @@ export default function ModificareExamen() {
     console.log("Examen modificat:", newExam);
 
     try {
-      // Get the token from localStorage
-      const token = localStorage.getItem("auth_token");
-      if (!token) {
-        alert("Token-ul nu a fost găsit. Te rugăm să te autentifici.");
-        return;
-      }
-
       const url = `http://127.0.0.1:8000/cereri/cereri/${idCerere}`;
       const response = await fetch(url, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Include token in Authorization header
         },
         body: JSON.stringify(newExam),
       });
@@ -260,32 +248,20 @@ export default function ModificareExamen() {
         </div>
 
         {/* Data examenului */}
-        <div className="relative mt-4">
-          <button
-            type="button"
-            onClick={() => setIsCalendarOpen((prev) => !prev)}
+        <div className="relative">
+          <input
+            type="date"
+            value={date ? date.format("YYYY-MM-DD") : ""}
+            onChange={(e) => setDate(dayjs(e.target.value))}
             className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-          >
-            {date ? date.format("DD/MM/YYYY") : "Selectează Data"}
-          </button>
-          {isCalendarOpen && (
-            <div className="absolute z-10 mt-2 w-full bg-white shadow-md">
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateCalendar
-                  value={date}
-                  onChange={handleDateChange}
-                  shouldDisableDate={(date) => date.isBefore(dayjs(), "day")}
-                />
-              </LocalizationProvider>
-            </div>
-          )}
+          />
         </div>
 
         <button
           type="submit"
           className="self-center px-6 py-2 bg-blue-600 text-white rounded-lg shadow"
         >
-          Salvează Modificările
+          Modifică Cererea
         </button>
       </form>
     </main>

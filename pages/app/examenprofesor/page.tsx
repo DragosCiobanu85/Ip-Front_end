@@ -17,11 +17,9 @@ export default function ExamenProfesor() {
   const [message, setMessage] = useState<string>(""); // Mesajul de succes
   const [examDetails, setExamDetails] = useState<any>({}); // Detaliile examenului
   const [professors, setProfessors] = useState<any[]>([]); // Lista de profesori
-  const [groups, setGroups] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]); // Lista de săli
   const [facultyName, setFacultyName] = useState<string>(""); // Numele facultății
-  const [professorName, setProfessorName] = useState<string>("");
-  const [groupsName, setGroupsName] = useState<string>(""); // Numele profesorului
+  const [professorName, setProfessorName] = useState<string>(""); // Numele profesorului
   const [subjectName, setSubjectName] = useState<string>(""); // Numele materiei
   const [examDate, setExamDate] = useState(dayjs()); // Data examenului
   const [idCerere, setIdCerere] = useState<number | null>(null); // ID-ul cererii
@@ -35,8 +33,6 @@ export default function ExamenProfesor() {
   const router = useRouter();
 
   const times = Array.from({ length: 11 }, (_, i) => `${8 + i}:00:00`);
-
-  const getToken = () => localStorage.getItem("auth_token") || ""; // Funcție pentru a obține token-ul
 
   useEffect(() => {
     const { searchParams } = new URL(window.location.href);
@@ -65,41 +61,27 @@ export default function ExamenProfesor() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const token = getToken(); // Obține token-ul din localStorage
       try {
-        const [facultiesRes, professorsRes, subjectsRes, roomsRes, groupsRes] =
+        const [facultiesRes, professorsRes, subjectsRes, roomsRes] =
           await Promise.all([
-            fetch("http://127.0.0.1:8000/facultati/", {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            fetch("http://127.0.0.1:8000/profesori/profesori/", {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            fetch("http://127.0.0.1:8000/materii/materii/", {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            fetch("http://127.0.0.1:8000/sali/", {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            fetch("http://127.0.0.1:8000/grupe/grupe/", {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
+            fetch("http://127.0.0.1:8000/facultati/"),
+            fetch("http://127.0.0.1:8000/profesori/profesori/"),
+            fetch("http://127.0.0.1:8000/materii/materii/"),
+            fetch("http://127.0.0.1:8000/sali/"),
           ]);
 
         if (
           facultiesRes.ok &&
           professorsRes.ok &&
           subjectsRes.ok &&
-          roomsRes.ok &&
-          groupsRes.ok
+          roomsRes.ok
         ) {
           setFaculties(await facultiesRes.json());
           const professorsData = await professorsRes.json();
           setProfessorsData(professorsData);
           setProfessors(professorsData); // Setezi lista de profesori cu ID-uri
           setSubjects(await subjectsRes.json());
-          setRooms(await roomsRes.json());
-          setGroups(await groupsRes.json()); // Setezi lista de săli cu ID-uri
+          setRooms(await roomsRes.json()); // Setezi lista de săli cu ID-uri
         } else {
           console.error("Eroare la obținerea datelor din API-uri");
         }
@@ -116,8 +98,7 @@ export default function ExamenProfesor() {
       examDetails &&
       professorsData.length &&
       faculties.length &&
-      subjects.length &&
-      groups.length
+      subjects.length
     ) {
       setProfessorName(
         getNameById(examDetails.id_Profesor, professorsData, "id_Profesor")
@@ -128,9 +109,8 @@ export default function ExamenProfesor() {
       setSubjectName(
         getNameById(examDetails.id_Materie, subjects, "id_Materie")
       );
-      setGroupsName(getNameById(examDetails.id_Grupa, groups, "id_Grupa"));
     }
-  }, [examDetails, professorsData, faculties, subjects, groups]);
+  }, [examDetails, professorsData, faculties, subjects]);
 
   const getNameById = (
     id: number | string,
@@ -143,12 +123,11 @@ export default function ExamenProfesor() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = getToken(); // Obține token-ul din localStorage
 
     const newExam = {
       id_Facultate: examDetails.id_Facultate || 0,
+      id_Profesor: examDetails.id_Profesor || 0,
       id_Profesor_1: selectedAssistant || 0, // ID-ul asistentului
-      id_Grupa: examDetails.id_Grupa || 0,
       id_Materie: examDetails.id_Materie || 0,
       data: examDate.format("YYYY-MM-DD"),
       id_Sala: selectedRoom || 0, // ID-ul sălii
@@ -157,18 +136,39 @@ export default function ExamenProfesor() {
     };
 
     try {
+      // Trimite cererea pentru a crea examenul
       const response = await fetch("http://127.0.0.1:8000/examene/examene/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(newExam),
       });
 
       if (response.ok) {
+        // Dacă examenul a fost salvat cu succes, elimină cererea
+        if (newExam.id_Cerere) {
+          const deleteRequest = await fetch(
+            `http://127.0.0.1:8000/cereri/cereri/${newExam.id_Cerere}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          if (deleteRequest.ok) {
+            console.log(
+              `Cererea cu id_Cerere ${newExam.id_Cerere} a fost ștearsă.`
+            );
+          } else {
+            console.error("Eroare la ștergerea cererii.");
+          }
+        }
+
+        // Înlocuiește cererea din contextul profesorilor și studenților
         removeExamFromTeacher(newExam.id_Cerere);
         removeExamFromStudent(newExam.id_Cerere);
+
+        // Setează mesajul de succes
         setMessage("Examen salvat cu succes!");
       } else {
         console.error("Eroare la salvarea examenului.");
@@ -191,18 +191,16 @@ export default function ExamenProfesor() {
               <thead>
                 <tr>
                   <th>Facultate</th>
-
+                  <th>Profesor</th>
                   <th>Materie</th>
-                  <th>Grupa</th>
                   <th>Data</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td>{facultyName || "Exemplu Facultate"}</td>
+                  <td>{professorName || "Exemplu Profesor"}</td>
                   <td>{subjectName || "Exemplu Materie"}</td>
-                  <td>{groupsName || "Exemplu grupa"}</td>
-
                   <td>{examDate.format("YYYY-MM-DD") || "Exemplu Data"}</td>
                 </tr>
               </tbody>
@@ -221,10 +219,10 @@ export default function ExamenProfesor() {
                 </option>
                 {professors.map((assistant) => (
                   <option
-                    key={assistant.id_Profesor}
-                    value={assistant.id_Profesor}
+                    key={assistant.id_Profesor} // Folosește id_Profesor pentru a asigura unicitatea
+                    value={assistant.id_Profesor} // Folosește id_Profesor
                   >
-                    {assistant.nume}
+                    {assistant.nume} {/* Afișezi numele asistentului */}
                   </option>
                 ))}
               </select>
@@ -241,7 +239,7 @@ export default function ExamenProfesor() {
                 </option>
                 {rooms.map((room) => (
                   <option key={room.id_Sala} value={room.id_Sala}>
-                    {room.nume}
+                    {getNameById(room.id_Sala, rooms, "id_Sala")}
                   </option>
                 ))}
               </select>
@@ -256,8 +254,8 @@ export default function ExamenProfesor() {
                 <option value="" disabled>
                   Ora
                 </option>
-                {times.map((time, index) => (
-                  <option key={index} value={time}>
+                {times.map((time) => (
+                  <option key={time} value={time}>
                     {time}
                   </option>
                 ))}
@@ -265,7 +263,11 @@ export default function ExamenProfesor() {
             </div>
           </div>
 
-          <button className="save-button" type="submit">
+          <button
+            className="save-button"
+            onClick={handleSave}
+            disabled={!selectedAssistant || !selectedRoom || !selectedTime}
+          >
             Salvează
           </button>
         </form>
