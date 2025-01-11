@@ -30,19 +30,32 @@ export default function ProgramareExamen() {
   const [facultati, setFacultati] = useState<
     Array<{ id_Facultate: number; nume: string }>
   >([]);
+  const [specializari, setSpecializari] = useState<
+    Array<{ id_Specializare: number; nume: string }>
+  >([]);
+  const [selectedGrupa, setSelectedGrupa] = useState<number | null>(null);
+  const [selectedSpecializare, setSelectedSpecializare] = useState<
+    number | null
+  >(null);
 
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
   const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false);
   const [isFacultyDropdownOpen, setIsFacultyDropdownOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isSpecializationDropdownOpen, setIsSpecializationDropdownOpen] =
+    useState(false);
+  const [grupe, setGrupe] = useState<Array<{ id_Grupa: number; nume: string }>>(
+    []
+  );
+  const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
 
-  const token = localStorage.getItem("auth_token");
-  console.log("Token-ul din localStorage:", token); // Obține token-ul din localStorage
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
 
   const fetchWithAuth = async (url: string) => {
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${token}`, // Adaugă token-ul în antet
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });
@@ -50,32 +63,19 @@ export default function ProgramareExamen() {
   };
 
   useEffect(() => {
-    const fetchMaterii = async () => {
+    const fetchFilteredMaterii = async () => {
       try {
         const response = await fetchWithAuth(
-          "http://127.0.0.1:8000/materii/materii/"
+          "http://127.0.0.1:8000/materii/materii/filter"
         );
         if (response.ok) {
           const data = await response.json();
-          setMaterii(data);
+          setMaterii(data); // Setează materiile filtrate
         } else {
-          console.error("Eroare la încărcarea materiilor");
-        }
-      } catch (error) {
-        console.error("Eroare la conexiunea cu API-ul:", error);
-      }
-    };
-
-    const fetchProfesori = async () => {
-      try {
-        const response = await fetchWithAuth(
-          "http://127.0.0.1:8000/profesori/profesori/"
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setProfesori(data);
-        } else {
-          console.error("Eroare la încărcarea profesorilor");
+          console.error(
+            "Eroare la încărcarea materiilor:",
+            await response.text()
+          );
         }
       } catch (error) {
         console.error("Eroare la conexiunea cu API-ul:", error);
@@ -85,42 +85,124 @@ export default function ProgramareExamen() {
     const fetchFacultati = async () => {
       try {
         const response = await fetchWithAuth(
-          "http://127.0.0.1:8000/facultati/"
+          "http://127.0.0.1:8000/studenti/studenti/facultate/authenticated"
         );
         if (response.ok) {
           const data = await response.json();
-          setFacultati(data);
+          setFacultati([data]); // Setează doar facultățile la care este înscris studentul
         } else {
-          console.error("Eroare la încărcarea facultăților");
+          console.error(
+            "Eroare la încărcarea facultăților:",
+            await response.text()
+          );
         }
       } catch (error) {
         console.error("Eroare la conexiunea cu API-ul:", error);
       }
     };
 
-    fetchMaterii();
-    fetchProfesori();
-    fetchFacultati();
-  }, [token]);
+    const fetchStudentGrupa = async () => {
+      try {
+        const response = await fetchWithAuth(
+          "http://127.0.0.1:8000/studenti/studenti/grupa"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setGrupe([data]); // Setează doar grupa studentului în lista de grupe
+        } else {
+          console.error("Eroare la încărcarea grupei:", await response.text());
+        }
+      } catch (error) {
+        console.error("Eroare la conexiunea cu API-ul:", error);
+      }
+    };
 
-  const handleSubjectSelection = (id_Materie: number, nume: string) => {
+    const fetchStudentSpecializare = async (id_Facultate: number) => {
+      try {
+        const response = await fetchWithAuth(
+          `http://127.0.0.1:8000/specializare/student/specializare/${id_Facultate}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setSpecializari([data]);
+        } else {
+          console.error(
+            "Eroare la încărcarea specializării:",
+            await response.text()
+          );
+        }
+      } catch (error) {
+        console.error("Eroare la conexiunea cu API-ul:", error);
+      }
+    };
+
+    const fetchData = async () => {
+      await Promise.all([
+        fetchFacultati(),
+        fetchStudentGrupa(),
+        fetchFilteredMaterii(),
+      ]);
+    };
+
+    fetchData();
+
+    if (faculty) {
+      fetchStudentSpecializare(faculty);
+    }
+  }, [token, faculty, subject]);
+
+  const fetchProfesor = async (id_Materie: number) => {
+    try {
+      const response = await fetchWithAuth(
+        `http://127.0.0.1:8000/materii/materii/${id_Materie}/profesor`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setProfesori([data]);
+      } else {
+        console.error(
+          "Eroare la încărcarea profesorului:",
+          await response.text()
+        );
+      }
+    } catch (error) {
+      console.error("Eroare la conexiunea cu API-ul:", error);
+    }
+  };
+
+  const handleSubjectSelection = async (id_Materie: number, nume: string) => {
     setSubject(id_Materie);
     setIsSubjectDropdownOpen(false);
+    fetchProfesor(id_Materie);
   };
 
   const handleProfessorSelection = (id_Profesor: number, nume: string) => {
-    setProfessor(id_Profesor);
-    setIsProfessorDropdownOpen(false);
+    setProfessor(id_Profesor); // Setează profesorul selectat
+    setIsProfessorDropdownOpen(false); // Închide dropdown-ul
+    console.log(`Profesor selectat: ${nume} (ID: ${id_Profesor})`); // Opțional: pentru debug
+  };
+
+  const handleSpecializareSelection = (
+    id_Specializare: number,
+    nume: string
+  ) => {
+    setSelectedSpecializare(id_Specializare);
+    setIsSpecializationDropdownOpen(false);
+  };
+
+  const handleStudentGrupa = (id_Grupa: number, nume: string) => {
+    setSelectedGrupa(id_Grupa); // Setează grupa selectată
+    setIsGroupDropdownOpen(false); // Închide dropdown-ul
+  };
+
+  const handleDateChange = (newDate: dayjs.Dayjs | null) => {
+    setDate(newDate);
+    setIsCalendarOpen(false);
   };
 
   const handleFacultySelection = (id_Facultate: number, nume: string) => {
     setFaculty(id_Facultate);
     setIsFacultyDropdownOpen(false);
-  };
-
-  const handleDateChange = (newDate: dayjs.Dayjs | null) => {
-    setDate(newDate);
-    setIsCalendarOpen(false); // Close the calendar after selecting the date
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -144,7 +226,7 @@ export default function ProgramareExamen() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Adaugă token-ul în antet
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(newExam),
       });
@@ -177,6 +259,107 @@ export default function ProgramareExamen() {
         className="flex flex-col gap-10 px-20 mt-20 w-full text-2xl font-medium text-blue-950 max-md:px-5 max-md:mt-10"
         onSubmit={handleSubmit}
       >
+        {/* Facultate */}
+        <div className="flex flex-col gap-6">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() =>
+                setIsFacultyDropdownOpen((prevState) => !prevState)
+              }
+              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
+            >
+              {faculty !== null
+                ? facultati.find((item) => item.id_Facultate === faculty)?.nume
+                : "Selectează Facultatea"}
+            </button>
+
+            {isFacultyDropdownOpen && (
+              <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
+                {facultati.map((option) => (
+                  <li
+                    key={option.id_Facultate}
+                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                    onClick={() =>
+                      handleFacultySelection(option.id_Facultate, option.nume)
+                    }
+                  >
+                    {option.nume}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* Specializare */}
+        <div className="flex flex-col gap-6">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() =>
+                setIsSpecializationDropdownOpen((prevState) => !prevState)
+              }
+              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
+            >
+              {selectedSpecializare !== null
+                ? specializari.find(
+                    (item) => item.id_Specializare === selectedSpecializare
+                  )?.nume
+                : "Selectează Specializarea"}
+            </button>
+
+            {isSpecializationDropdownOpen && (
+              <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
+                {specializari.map((option) => (
+                  <li
+                    key={option.id_Specializare}
+                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                    onClick={() =>
+                      handleSpecializareSelection(
+                        option.id_Specializare,
+                        option.nume
+                      )
+                    }
+                  >
+                    {option.nume}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsGroupDropdownOpen((prevState) => !prevState)}
+              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
+            >
+              {selectedGrupa !== null
+                ? grupe.find((item) => item.id_Grupa === selectedGrupa)?.nume
+                : "Selectează Grupa"}
+            </button>
+
+            {isGroupDropdownOpen && (
+              <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
+                {grupe.map((option) => (
+                  <li
+                    key={option.id_Grupa}
+                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                    onClick={() =>
+                      handleStudentGrupa(option.id_Grupa, option.nume)
+                    }
+                  >
+                    {option.nume}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
         {/* Materie */}
         <div className="flex flex-col gap-6">
           <div className="relative">
@@ -215,17 +398,14 @@ export default function ProgramareExamen() {
           <div className="relative">
             <button
               type="button"
-              onClick={() =>
-                setIsProfessorDropdownOpen((prevState) => !prevState)
-              }
+              onClick={() => setIsProfessorDropdownOpen((prev) => !prev)}
               className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
             >
               {professor !== null
                 ? profesori.find((item) => item.id_Profesor === professor)?.nume
                 : "Selectează Profesorul"}
             </button>
-
-            {isProfessorDropdownOpen && (
+            {isProfessorDropdownOpen && profesori.length > 0 && (
               <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
                 {profesori.map((option) => (
                   <li
@@ -233,39 +413,6 @@ export default function ProgramareExamen() {
                     className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
                     onClick={() =>
                       handleProfessorSelection(option.id_Profesor, option.nume)
-                    }
-                  >
-                    {option.nume}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        {/* Facultate */}
-        <div className="flex flex-col gap-6">
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() =>
-                setIsFacultyDropdownOpen((prevState) => !prevState)
-              }
-              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-            >
-              {faculty !== null
-                ? facultati.find((item) => item.id_Facultate === faculty)?.nume
-                : "Selectează Facultatea"}
-            </button>
-
-            {isFacultyDropdownOpen && (
-              <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
-                {facultati.map((option) => (
-                  <li
-                    key={option.id_Facultate}
-                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                    onClick={() =>
-                      handleFacultySelection(option.id_Facultate, option.nume)
                     }
                   >
                     {option.nume}

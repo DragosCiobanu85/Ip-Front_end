@@ -238,7 +238,7 @@ export default function Home() {
               })
             ) : (
               <StyledTableRow>
-                <StyledTableCell colSpan={7} align="center">
+                <StyledTableCell colSpan={8} align="center">
                   Nu sunt examene programate.
                 </StyledTableCell>
               </StyledTableRow>
