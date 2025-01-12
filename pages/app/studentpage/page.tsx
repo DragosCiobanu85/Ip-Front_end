@@ -19,6 +19,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { Exam, useExams } from "../context/examcontext";
 import { useRouter } from "next/navigation";
 import { Token } from "@mui/icons-material";
+import { jwtDecode } from "jwt-decode";
 
 // Styled components
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -40,16 +41,27 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
+interface CustomJwtPayload {
+  rol: string;
+  user_details: {
+    id: number;
+    name: string;
+    rol: string;
+  };
+}
+
 export default function StudentAccount() {
   const { studentExams, removeExamFromStudent, removeExamFromTeacher } =
     useExams();
   const [rows, setRows] = useState<any[]>([]); // To store exams fetched from API
   const [openDialog, setOpenDialog] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [examToDelete, setExamToDelete] = useState<number | null>(null); // Track the exam to delete
   const [faculties, setFaculties] = useState<any[]>([]);
   const [professors, setProfessors] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
+  const [status, setStatus] = useState<any[]>([]);
   const router = useRouter();
 
   // Fetch exams from the API on component mount
@@ -61,9 +73,24 @@ export default function StudentAccount() {
 
         // Check if token exists
         if (!token) {
-          console.error("No token found. Please log in first.");
-          return; // Exit if there's no token
+          router.push("/login");
+          return; // Redirect to the 401 page if there's no token
+          // Exit if there's no token
         }
+        setIsAuthenticated(true);
+
+        const decodedToken: CustomJwtPayload = jwtDecode(token); // Decodificarea corectă a tokenului
+
+        if (
+          decodedToken.rol !== "Student" &&
+          decodedToken.user_details.rol !== "Student"
+        ) {
+          router.push("/login"); // Redirect to login if the role is not 'Profesor'
+        }
+
+        setIsAuthenticated(true);
+
+        console.log("Token:", token); // Dacă există token, setăm autentificarea ca adevărată
 
         console.log("Token retrieved:", token); // Debugging line
 
@@ -102,11 +129,18 @@ export default function StudentAccount() {
         const subjectResponse = await fetch(
           "http://127.0.0.1:8000/materii/materii/"
         );
+        const statusResponse = await fetch("http://127.0.0.1:8000/status/");
 
-        if (facultyResponse.ok && professorResponse.ok && subjectResponse.ok) {
+        if (
+          facultyResponse.ok &&
+          professorResponse.ok &&
+          subjectResponse.ok &&
+          statusResponse.ok
+        ) {
           const facultyData = await facultyResponse.json();
           const professorData = await professorResponse.json();
           const subjectData = await subjectResponse.json();
+          const statusData = await statusResponse.json();
 
           // Debugging logs
           console.log("Faculties:", facultyData);
@@ -116,6 +150,7 @@ export default function StudentAccount() {
           setFaculties(facultyData);
           setProfessors(professorData);
           setSubjects(subjectData);
+          setStatus(statusData);
         } else {
           console.error("Failed to fetch names");
         }
@@ -138,32 +173,36 @@ export default function StudentAccount() {
   const confirmDelete = async () => {
     if (examToDelete !== null) {
       try {
+        const token = localStorage.getItem("auth_token");
+        // Trimite cererea de actualizare a statusului la anulata
         const response = await fetch(
-          `http://127.0.0.1:8000/cereri/cereri/${examToDelete}`,
+          `http://127.0.0.1:8000/cereri/cereri/${examToDelete}/update-status-anulata`,
           {
-            method: "DELETE",
+            method: "PUT", // Folosim PUT pentru a actualiza cererea
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              status: "anulata", // Trimit statusul "anulata"
+            }),
           }
         );
 
         if (response.ok) {
-          // Remove the exam from the state and UI
-          setRows((prevRows) =>
-            prevRows.filter((exam) => exam.id_Cerere !== examToDelete)
-          );
+          // Dacă cererea a fost anulată cu succes, actualizează UI-ul
 
-          // Optionally, remove from context if needed
           removeExamFromStudent(examToDelete);
           removeExamFromTeacher(examToDelete);
-
-          setCancelMessage("Cererea a fost ștearsă!");
+          setCancelMessage("Cererea a fost anulată!");
         } else {
-          console.error("Failed to delete cererea");
+          console.error("Failed to update cererea status");
         }
       } catch (error) {
-        console.error("Error deleting cererea:", error);
+        console.error("Error updating cererea status:", error);
       }
 
-      setOpenDialog(false); // Close the dialog after confirmation
+      setOpenDialog(false); // Închide dialogul după confirmare
     }
   };
 
@@ -184,6 +223,11 @@ export default function StudentAccount() {
 
     return "N/A"; // Dacă nu găsește, returnează "N/A"
   };
+
+  if (isAuthenticated === null) {
+    // Înainte să știm dacă este autenticat sau nu, putem returna un loading sau un fallback
+    return <div>Loading...</div>;
+  }
 
   return (
     <>
@@ -226,20 +270,23 @@ export default function StudentAccount() {
         >
           <TableHead>
             <TableRow>
-              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
                 Facultate
               </StyledTableCell>
-              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
                 Profesor
               </StyledTableCell>
-              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
                 Materie
               </StyledTableCell>
-              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
                 Data
               </StyledTableCell>
+              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
+                Status
+              </StyledTableCell>
 
-              <StyledTableCell style={{ width: "20%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
                 Acțiune
               </StyledTableCell>
             </TableRow>
@@ -272,33 +319,46 @@ export default function StudentAccount() {
                   {new Date(row.data).toLocaleDateString()}
                 </StyledTableCell>
 
+                <StyledTableCell align="center">
+                  {getNameById(row.id_Status, status, "id_Status")}
+                </StyledTableCell>
                 {/* Acțiune */}
                 <StyledTableCell align="center">
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-around",
-                      gap: "0 10px",
-                    }}
-                  >
-                    <Button
-                      variant="outlined"
-                      onClick={() => handleModifyClick(row)}
-                    >
-                      Modifică
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      onClick={() => handleCancel(row.id_Cerere)}
-                      style={{
-                        marginLeft: "10px",
-                        backgroundColor: "#FF0000",
-                        color: "white",
-                      }}
-                    >
-                      Anulează
-                    </Button>
-                  </div>
+                  {/* Verifică dacă statusul este "anulata", dacă da, ascunde butoanele */}
+                  {getNameById(row.id_Status, status, "id_Status") !==
+                    "anulata" &&
+                    getNameById(row.id_Status, status, "id_Status") !==
+                      "respinsa" &&
+                    getNameById(row.id_Status, status, "id_Status") !==
+                      "respinsa" &&
+                    getNameById(row.id_Status, status, "id_Status") !==
+                      "acceptata" && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-around",
+                          gap: "0 10px",
+                        }}
+                      >
+                        <Button
+                          variant="outlined"
+                          onClick={() => handleModifyClick(row)}
+                        >
+                          Modifică
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          onClick={() => handleCancel(row.id_Cerere)}
+                          style={{
+                            marginLeft: "10px",
+                            backgroundColor: "#FF0000",
+                            color: "white",
+                          }}
+                        >
+                          Anulează
+                        </Button>
+                      </div>
+                    )}
                 </StyledTableCell>
               </StyledTableRow>
             ))}

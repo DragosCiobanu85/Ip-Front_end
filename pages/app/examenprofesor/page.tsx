@@ -7,6 +7,7 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import dayjs from "dayjs";
 import "./index.css";
+import { jwtDecode } from "jwt-decode";
 
 export default function ExamenProfesor() {
   const [selectedAssistant, setSelectedAssistant] = useState<number | string>(
@@ -25,10 +26,12 @@ export default function ExamenProfesor() {
   const [subjectName, setSubjectName] = useState<string>(""); // Numele materiei
   const [examDate, setExamDate] = useState(dayjs()); // Data examenului
   const [idCerere, setIdCerere] = useState<number | null>(null); // ID-ul cererii
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const [faculties, setFaculties] = useState<any[]>([]); // Facultăți
   const [professorsData, setProfessorsData] = useState<any[]>([]); // Datele profesorilor
   const [subjects, setSubjects] = useState<any[]>([]); // Materii
+  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
 
   const { addExamToHome, removeExamFromTeacher, removeExamFromStudent } =
     useExams();
@@ -37,6 +40,15 @@ export default function ExamenProfesor() {
   const times = Array.from({ length: 11 }, (_, i) => `${8 + i}:00:00`);
 
   const getToken = () => localStorage.getItem("auth_token") || ""; // Funcție pentru a obține token-ul
+
+  interface CustomJwtPayload {
+    rol: string;
+    user_details: {
+      id: number;
+      name: string;
+      rol: string;
+    };
+  }
 
   useEffect(() => {
     const { searchParams } = new URL(window.location.href);
@@ -66,6 +78,25 @@ export default function ExamenProfesor() {
   useEffect(() => {
     const fetchData = async () => {
       const token = getToken(); // Obține token-ul din localStorage
+      if (!token) {
+        router.push("/login"); // Redirect to the 401 page if there's no token
+        return; // Exit if there's no token
+      }
+
+      const decodedToken: CustomJwtPayload = jwtDecode(token); // Decodificarea corectă a tokenului
+
+      if (
+        decodedToken.rol !== "Profesor" &&
+        decodedToken.user_details.rol !== "Profesor"
+      ) {
+        router.push("/login"); // Redirect to login if the role is not 'Profesor'
+      }
+
+      setIsAuthenticated(true);
+
+      console.log("Token:", token);
+
+      setIsAuthenticated(true);
       try {
         const [facultiesRes, professorsRes, subjectsRes, roomsRes, groupsRes] =
           await Promise.all([
@@ -141,6 +172,55 @@ export default function ExamenProfesor() {
     return item ? item.nume : "N/A";
   };
 
+  const fetchOccupiedTimes = async (roomId: number) => {
+    try {
+      const token = getToken();
+
+      // Data cererii care trebuie trimisă la backend
+      const requestedDate = examDate.format("YYYY-MM-DD");
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/examene/examene/sala/${roomId}?requested_date=${requestedDate}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const availableTimes: string[] = await response.json(); // Tipul explicit pentru array-ul de stringuri
+        console.log("Available Times:", availableTimes);
+
+        // Sortează orele disponibile
+        const sortedTimes = availableTimes.sort((a: string, b: string) => {
+          // Convertește fiecare oră în format 24h pentru comparare
+          const [hourA, minuteA] = a.split(":").map(Number);
+          const [hourB, minuteB] = b.split(":").map(Number);
+
+          // Compară orele
+          if (hourA === hourB) {
+            return minuteA - minuteB; // Compară minutele dacă orele sunt egale
+          }
+          return hourA - hourB; // Compară orele
+        });
+
+        // Setează orele disponibile
+        setAvailableTimes(sortedTimes);
+      } else {
+        console.error("Eroare la obținerea orelor disponibile.");
+      }
+    } catch (error) {
+      console.error("Eroare la obținerea orelor disponibile:", error);
+    }
+  };
+
+  const handleRoomSelection = (roomId: number) => {
+    setSelectedRoom(roomId);
+    fetchOccupiedTimes(roomId); // Actualizează orele disponibile când sala este aleasă
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = getToken(); // Obține token-ul din localStorage
@@ -177,6 +257,11 @@ export default function ExamenProfesor() {
       console.error("Eroare la trimiterea cererii POST:", error);
     }
   };
+
+  if (isAuthenticated === null) {
+    // Înainte să știm dacă este autenticat sau nu, putem returna un loading sau un fallback
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="examenprofeor-container">
@@ -229,11 +314,10 @@ export default function ExamenProfesor() {
                 ))}
               </select>
             </div>
-
             <div className="dropdown">
               <select
                 value={selectedRoom}
-                onChange={(e) => setSelectedRoom(e.target.value)}
+                onChange={(e) => handleRoomSelection(Number(e.target.value))}
                 className="dropdown-select"
               >
                 <option value="" disabled>
@@ -256,7 +340,7 @@ export default function ExamenProfesor() {
                 <option value="" disabled>
                   Ora
                 </option>
-                {times.map((time, index) => (
+                {availableTimes.map((time, index) => (
                   <option key={index} value={time}>
                     {time}
                   </option>

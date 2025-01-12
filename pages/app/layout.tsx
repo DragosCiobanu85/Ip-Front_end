@@ -7,6 +7,7 @@ import LoginIcon from "./images/backarrow.png";
 import HomeIcon1 from "./images/home.png";
 import Sigla from "./images/poza.png";
 import { ExamProvider } from "./context/examcontext";
+import { useRouter } from "next/navigation";
 
 export default function RootLayout({
   children,
@@ -14,6 +15,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    // Șterge token-ul din localStorage
+    localStorage.removeItem("auth_token");
+
+    // Redirecționează utilizatorul către pagina de login (sau o altă pagină)
+    router.push("/"); // Schimbă cu ruta dorită, de exemplu "/login"
+  };
 
   return (
     <html lang="en">
@@ -98,6 +108,7 @@ export default function RootLayout({
                     top: "16px",
                     right: "16px",
                   }}
+                  onClick={handleLogout}
                 />
               </Link>
             ) : pathname === "/teacherpage" ? (
@@ -112,6 +123,7 @@ export default function RootLayout({
                     top: "16px",
                     right: "16px",
                   }}
+                  onClick={handleLogout}
                 />
               </Link>
             ) : pathname === "/examen" ? (

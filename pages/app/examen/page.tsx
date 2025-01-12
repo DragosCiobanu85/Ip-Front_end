@@ -7,6 +7,19 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useSearchParams, useRouter } from "next/navigation";
 import "./app.css";
+import { jwtDecode } from "jwt-decode";
+
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
+
+interface CustomJwtPayload {
+  rol: string;
+  user_details: {
+    id: number;
+    name: string;
+    rol: string;
+  };
+}
 
 export default function ProgramareExamen() {
   const { addExamToTeacher, addExamsToStudentPage, updateExam } = useExams();
@@ -18,7 +31,7 @@ export default function ProgramareExamen() {
   const [professor, setProfessor] = useState<number | null>(null);
   const [faculty, setFaculty] = useState<number | null>(null);
   const [date, setDate] = useState<dayjs.Dayjs | null>(null);
-  const [status, setStatus] = useState("");
+
   const today = dayjs();
 
   const [materii, setMaterii] = useState<
@@ -40,10 +53,12 @@ export default function ProgramareExamen() {
 
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
   const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isFacultyDropdownOpen, setIsFacultyDropdownOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isSpecializationDropdownOpen, setIsSpecializationDropdownOpen] =
     useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [grupe, setGrupe] = useState<Array<{ id_Grupa: number; nume: string }>>(
     []
   );
@@ -63,19 +78,34 @@ export default function ProgramareExamen() {
   };
 
   useEffect(() => {
+    if (!token) {
+      router.push("/login"); // Redirect to the 401 page if there's no token
+      return; // Exit if there's no token
+    }
+
+    const decodedToken: CustomJwtPayload = jwtDecode(token); // Decodificarea corectă a tokenului
+
+    if (
+      decodedToken.rol !== "Student" &&
+      decodedToken.user_details.rol !== "Student"
+    ) {
+      router.push("/login"); // Redirect to login if the role is not 'Profesor'
+    }
+
+    setIsAuthenticated(true);
     const fetchFilteredMaterii = async () => {
       try {
-        const response = await fetchWithAuth(
-          "http://127.0.0.1:8000/materii/materii/filter"
+        const response = await fetch(
+          "http://127.0.0.1:8000/materii/materii/filter",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include tokenul în antetul cererii
+            },
+          }
         );
         if (response.ok) {
           const data = await response.json();
           setMaterii(data); // Setează materiile filtrate
-        } else {
-          console.error(
-            "Eroare la încărcarea materiilor:",
-            await response.text()
-          );
         }
       } catch (error) {
         console.error("Eroare la conexiunea cu API-ul:", error);
@@ -83,34 +113,34 @@ export default function ProgramareExamen() {
     };
 
     const fetchFacultati = async () => {
-      try {
-        const response = await fetchWithAuth(
-          "http://127.0.0.1:8000/studenti/studenti/facultate/authenticated"
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setFacultati([data]); // Setează doar facultățile la care este înscris studentul
-        } else {
-          console.error(
-            "Eroare la încărcarea facultăților:",
-            await response.text()
-          );
+      const response = await fetch(
+        "http://127.0.0.1:8000/studenti/studenti/facultate/authenticated",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include tokenul în antetul cererii
+          },
         }
-      } catch (error) {
-        console.error("Eroare la conexiunea cu API-ul:", error);
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setFacultati([data]); // Setează doar facultățile la care este înscris studentul
       }
     };
 
     const fetchStudentGrupa = async () => {
       try {
-        const response = await fetchWithAuth(
-          "http://127.0.0.1:8000/studenti/studenti/grupa"
+        const response = await fetch(
+          "http://127.0.0.1:8000/studenti/studenti/grupa",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include tokenul în antetul cererii
+            },
+          }
         );
+
         if (response.ok) {
           const data = await response.json();
           setGrupe([data]); // Setează doar grupa studentului în lista de grupe
-        } else {
-          console.error("Eroare la încărcarea grupei:", await response.text());
         }
       } catch (error) {
         console.error("Eroare la conexiunea cu API-ul:", error);
@@ -119,17 +149,17 @@ export default function ProgramareExamen() {
 
     const fetchStudentSpecializare = async (id_Facultate: number) => {
       try {
-        const response = await fetchWithAuth(
-          `http://127.0.0.1:8000/specializare/student/specializare/${id_Facultate}`
+        const response = await fetch(
+          `http://127.0.0.1:8000/specializare/student/specializare/${id_Facultate}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include tokenul în antetul cererii
+            },
+          }
         );
         if (response.ok) {
           const data = await response.json();
           setSpecializari([data]);
-        } else {
-          console.error(
-            "Eroare la încărcarea specializării:",
-            await response.text()
-          );
         }
       } catch (error) {
         console.error("Eroare la conexiunea cu API-ul:", error);
@@ -153,8 +183,13 @@ export default function ProgramareExamen() {
 
   const fetchProfesor = async (id_Materie: number) => {
     try {
-      const response = await fetchWithAuth(
-        `http://127.0.0.1:8000/materii/materii/${id_Materie}/profesor`
+      const response = await fetch(
+        `http://127.0.0.1:8000/materii/materii/${id_Materie}/profesor`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include tokenul în antetul cererii
+          },
+        }
       );
       if (response.ok) {
         const data = await response.json();
@@ -218,8 +253,9 @@ export default function ProgramareExamen() {
       id_Profesor: professor,
       id_Facultate: faculty,
       data: date.format("YYYY-MM-DD"),
-      status: status,
     };
+
+    console.log("Date trimise catre backend:", newExam);
 
     try {
       const response = await fetch("http://127.0.0.1:8000/cereri/cereri/", {
@@ -232,22 +268,32 @@ export default function ProgramareExamen() {
       });
 
       if (!response.ok) {
-        throw new Error("Eroare la crearea cererii de examen!");
+        if (response.status === 400) {
+          const errorData = await response.json(); // Preia răspunsul ca JSON
+          const errorMessage = errorData.detail;
+          setErrorMessage(errorMessage); // Setează mesajul de eroare în Snackbar
+          return; // Opriți execuția și nu aruncați eroarea mai departe
+        }
+        throw new Error("Eroare necunoscută la crearea cererii.");
       }
 
       alert("Cererea de examen a fost trimisă cu succes!");
       router.push("/studentpage");
     } catch (error) {
       console.error("Eroare la comunicarea cu serverul:", error);
-      alert("A apărut o eroare. Te rugăm să încerci din nou.");
     }
 
+    // Resetează valorile formularului
     setSubject(null);
     setProfessor(null);
     setFaculty(null);
     setDate(null);
-    setStatus("");
   };
+
+  if (isAuthenticated === null) {
+    // Înainte să știm dacă este autenticat sau nu, putem returna un loading sau un fallback
+    return <div>Loading...</div>;
+  }
 
   return (
     <main className="flex flex-col pb-40 bg-white max-md:pb-24">
@@ -453,6 +499,18 @@ export default function ProgramareExamen() {
           Trimite cererea
         </button>
       </form>
+
+      {/* Mesaj de eroare */}
+      <Snackbar
+        open={!!errorMessage}
+        autoHideDuration={6000}
+        onClose={() => setErrorMessage("")}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert severity="error" sx={{ width: "100%" }}>
+          {errorMessage}
+        </Alert>
+      </Snackbar>
     </main>
   );
 }
