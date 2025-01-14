@@ -9,6 +9,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useSearchParams, useRouter } from "next/navigation";
 import "./app.css";
 import { jwtDecode } from "jwt-decode";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 interface CustomJwtPayload {
   rol: string;
@@ -28,6 +30,11 @@ export default function ModificareExamen() {
   const [professor, setProfessor] = useState<number | null>(null);
   const [faculty, setFaculty] = useState<number | null>(null);
   const [date, setDate] = useState<dayjs.Dayjs | null>(null);
+  const [specializare, setSpecializare] = useState<number | null>(null);
+  const [grupa, setGrupa] = useState<number | null>(null);
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const [idCerere, setIdCerere] = useState<number | null>(null);
 
@@ -39,11 +46,14 @@ export default function ModificareExamen() {
   >([]);
   const [facultati, setFacultati] = useState<
     Array<{ id_Facultate: number; nume: string }>
-  >([]); // Initializing as an empty array
+  >([]);
+  const [specializari, setSpecializari] = useState<
+    Array<{ id_Specializare: number; nume: string }>
+  >([]);
+  const [grupe, setGrupe] = useState<Array<{ id_Grupa: number; nume: string }>>(
+    []
+  ); // Initializing as an empty array
 
-  const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
-  const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false);
-  const [isFacultyDropdownOpen, setIsFacultyDropdownOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const token =
@@ -100,10 +110,90 @@ export default function ModificareExamen() {
         setFacultati([data]); // Setează doar facultățile la care este înscris studentul
       }
     };
+    const fetchStudentGrupa = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/studenti/studenti/grupa",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include tokenul în antetul cererii
+            },
+          }
+        );
 
-    fetchFacultati();
-    fetchFilteredMaterii();
-  }, []);
+        if (response.ok) {
+          const data = await response.json();
+          setGrupe([data]); // Setează doar grupa studentului în lista de grupe
+        }
+      } catch (error) {
+        console.error("Eroare la conexiunea cu API-ul:", error);
+      }
+    };
+    const fetchStudentSpecializare = async (id_Facultate: number) => {
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:8000/specializare/student/specializare/${id_Facultate}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include tokenul în antetul cererii
+            },
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setSpecializari([data]);
+        }
+      } catch (error) {
+        console.error("Eroare la conexiunea cu API-ul:", error);
+      }
+    };
+
+    const fetchData = async () => {
+      await Promise.all([
+        fetchFacultati(),
+        fetchStudentGrupa(),
+        fetchFilteredMaterii(),
+      ]);
+    };
+
+    fetchData();
+    console.log("Facultateaaaaaaaaaa", faculty);
+    if (faculty) {
+      fetchStudentSpecializare(faculty);
+    }
+    console.log(subject);
+    const fetchProfesor = async (id_Materie: number) => {
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:8000/materii/materii/${id_Materie}/profesor`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Răspuns API pentru profesori:", data);
+
+          // Asigură-te că datele sunt un array
+          setProfesori([data]);
+        } else {
+          console.error("Eroare API la fetchProfesor:", await response.text());
+        }
+      } catch (error) {
+        console.error("Eroare la fetchProfesor:", error);
+      }
+    };
+    if (subject) {
+      console.log("Apel fetchProfesor pentru subject:", subject);
+      fetchProfesor(subject);
+    }
+  }, [token, faculty, subject]);
+
+  useEffect(() => {
+    console.log("Profesori disponibili:", profesori);
+  }, [profesori]);
 
   // Extrage datele din query params
   useEffect(() => {
@@ -115,14 +205,14 @@ export default function ModificareExamen() {
         setProfessor(exam.id_Profesor);
         setFaculty(exam.id_Facultate);
         setSubject(exam.id_Materie);
+        setSpecializare(exam.id_Specializare);
         setDate(dayjs(exam.data));
-
+        setGrupa(exam.id_Grupa);
         if (exam.id_Cerere) {
           setIdCerere(exam.id_Cerere);
         } else {
           console.error("id_Cerere nu există în exam.");
         }
-        fetchProfesor(exam.id_Materie);
       } catch (error) {
         console.error("Eroare la parsarea JSON-ului exam:", error);
       }
@@ -130,71 +220,6 @@ export default function ModificareExamen() {
   }, [searchParams]);
 
   // Funcții de obținere a numelui pentru Facultate, Profesor și Materie
-  const getFacultyName = () => {
-    if (faculty !== null) {
-      const facultyName = facultati.find(
-        (item) => item.id_Facultate === faculty
-      );
-      return facultyName ? facultyName.nume : "Facultate Inexistentă";
-    }
-    return "Selectează Facultatea";
-  };
-
-  const getProfessorName = () => {
-    if (professor !== null) {
-      const professorName = profesori.find(
-        (item) => item.id_Profesor === professor
-      );
-      return professorName ? professorName.nume : "Profesor Inexistent";
-    }
-    return "Selectează Profesorul";
-  };
-
-  const getSubjectName = () => {
-    if (subject !== null) {
-      const subjectName = materii.find((item) => item.id_Materie === subject);
-      return subjectName ? subjectName.nume : "Materie Inexistentă";
-    }
-    return "Selectează Materia";
-  };
-
-  const fetchProfesor = async (id_Materie: number) => {
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/materii/materii/${id_Materie}/profesor`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Fetched professors:", data);
-        setProfesori([data]); // Update the list of professors
-      } else {
-        console.error("Error loading professors:", await response.text());
-      }
-    } catch (error) {
-      console.error("Error fetching professors:", error);
-    }
-  };
-
-  const handleProfessorSelection = (id_Profesor: number, nume: string) => {
-    setProfessor(id_Profesor); // Setează profesorul selectat
-    setIsProfessorDropdownOpen(false); // Închide dropdown-ul
-    console.log(`Profesor selectat: ${nume} (ID: ${id_Profesor})`); // Opțional: pentru debug
-  };
-  const handleFacultySelection = (id_Facultate: number, nume: string) => {
-    setFaculty(id_Facultate);
-    setIsFacultyDropdownOpen(false);
-  };
-
-  const handleSubjectSelection = async (id_Materie: number, nume: string) => {
-    setSubject(id_Materie);
-    setIsSubjectDropdownOpen(false);
-    fetchProfesor(id_Materie);
-  };
 
   const handleDateChange = (newDate: dayjs.Dayjs | null) => {
     setDate(newDate);
@@ -218,17 +243,18 @@ export default function ModificareExamen() {
       id_Materie: subject,
       id_Profesor: professor,
       id_Facultate: faculty,
+      id_Specializare: specializare,
+      id_Grupa: grupa,
       data: date.format("YYYY-MM-DD"),
     };
 
     console.log("Examen modificat:", newExam);
 
     try {
-      // Get the token from localStorage
       const token = localStorage.getItem("auth_token");
       if (!token) {
-        router.push("/login"); // Redirect to the 401 page if there's no token
-        return; // Exit if there's no token
+        router.push("/login");
+        return;
       }
 
       setIsAuthenticated(true);
@@ -238,7 +264,7 @@ export default function ModificareExamen() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Include token in Authorization header
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(newExam),
       });
@@ -247,12 +273,18 @@ export default function ModificareExamen() {
         throw new Error("Eroare la actualizarea cererii!");
       }
 
-      alert("Cererea de examen a fost actualizată cu succes!");
-      router.push("/studentpage");
+      setSnackbarMessage("Cererea de examen a fost actualizată cu succes!");
+      setSnackbarOpen(true);
     } catch (error) {
       console.error("Eroare la comunicarea cu serverul:", error);
       alert("A apărut o eroare. Te rugăm să încerci din nou.");
     }
+  };
+
+  // Callback pentru închiderea Snackbar-ului
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+    router.push("/studentpage"); // Redirecționează după ce Snackbar se închide
   };
 
   if (isAuthenticated === null) {
@@ -260,10 +292,17 @@ export default function ModificareExamen() {
     return <div>Loading...</div>;
   }
 
+  console.log("Valoarea professor:", professor);
+  console.log("Lista profesori:", profesori);
+  console.log(
+    "Profesor găsit:",
+    profesori.find((item) => item.id_Profesor === Number(professor))
+  );
+
   return (
     <main className="flex flex-col pb-40 bg-white max-md:pb-24">
       <h1 className="self-center mt-16 text-3xl font-medium text-blue-950 max-md:mt-10">
-        Modificare examen
+        Modificare cerere
       </h1>
 
       <form
@@ -271,119 +310,133 @@ export default function ModificareExamen() {
         onSubmit={handleSubmit}
       >
         {/* Facultate Dropdown */}
-        <div className="relative">
-          <select
-            value={faculty || ""}
-            onChange={(e) => {
-              const selectedFaculty = facultati.find(
-                (item) => item.id_Facultate === Number(e.target.value)
-              );
-              if (selectedFaculty) {
-                handleFacultySelection(
-                  selectedFaculty.id_Facultate,
-                  selectedFaculty.nume
-                );
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Facultate Input */}
+          <div className="relative">
+            <input
+              type="text"
+              value={
+                faculty
+                  ? facultati.find((item) => item.id_Facultate === faculty)
+                      ?.nume || ""
+                  : ""
               }
-            }}
-            className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-          >
-            <option value="" disabled>
-              Selectează Facultatea
-            </option>
-            {facultati.map((item) => (
-              <option key={item.id_Facultate} value={item.id_Facultate}>
-                {item.nume}
-              </option>
-            ))}
-          </select>
-        </div>
+              readOnly
+              className="w-80 px-4 py-2 bg-white border border-slate-800 rounded shadow ml-60 cursor-not-allowed hover:bg-gray-100"
+              placeholder="Selectează Facultatea"
+            />
+          </div>
 
-        {/* Profesor Dropdown */}
-        {/* Profesor Dropdown */}
-        <div className="relative">
-          <select
-            value={professor || ""}
-            onChange={(e) => {
-              const selectedProfessor = profesori.find(
-                (item) => item.id_Profesor === Number(e.target.value)
-              );
-              if (selectedProfessor) {
-                handleProfessorSelection(
-                  selectedProfessor.id_Profesor,
-                  selectedProfessor.nume
-                );
+          {/* Specializare Input */}
+          <div className="relative">
+            <input
+              type="text"
+              value={
+                specializare
+                  ? specializari.find(
+                      (item) => item.id_Specializare === specializare
+                    )?.nume || ""
+                  : ""
               }
-            }}
-            className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-          >
-            <option value="" disabled>
-              Selectează Profesorul
-            </option>
-            {profesori.map((item) => (
-              <option key={item.id_Profesor} value={item.id_Profesor}>
-                {item.nume}
-              </option>
-            ))}
-          </select>
-        </div>
+              readOnly
+              className="w-80 px-4 py-2 bg-white border border-slate-800 rounded shadow ml-60 cursor-not-allowed hover:bg-gray-100"
+              placeholder="Selectează Specializarea"
+            />
+          </div>
 
-        {/* Materie Dropdown */}
-        <div className="relative">
-          <select
-            value={subject || ""}
-            onChange={(e) => {
-              const selectedSubject = materii.find(
-                (item) => item.id_Materie === Number(e.target.value)
-              );
-              if (selectedSubject) {
-                handleSubjectSelection(
-                  selectedSubject.id_Materie,
-                  selectedSubject.nume
-                );
+          {/* Grupa Input */}
+          <div className="relative">
+            <input
+              type="text"
+              value={
+                grupa
+                  ? grupe.find((item) => item.id_Grupa === grupa)?.nume || ""
+                  : ""
               }
-            }}
-            className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-          >
-            <option value="" disabled>
-              Selectează Materia
-            </option>
-            {materii.map((item) => (
-              <option key={item.id_Materie} value={item.id_Materie}>
-                {item.nume}
-              </option>
-            ))}
-          </select>
-        </div>
+              readOnly
+              className="w-80 px-4 py-2 bg-white border border-slate-800 rounded shadow ml-60 cursor-not-allowed hover:bg-gray-100"
+              placeholder="Selectează Grupa"
+            />
+          </div>
 
-        {/* Data examenului */}
-        <div className="relative mt-4">
-          <button
-            type="button"
-            onClick={() => setIsCalendarOpen((prev) => !prev)}
-            className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-          >
-            {date ? date.format("DD/MM/YYYY") : "Selectează Data"}
-          </button>
-          {isCalendarOpen && (
-            <div className="absolute z-10 mt-2 w-full bg-white shadow-md">
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateCalendar
-                  value={date}
-                  onChange={handleDateChange}
-                  shouldDisableDate={(date) => date.isBefore(dayjs(), "day")}
-                />
-              </LocalizationProvider>
-            </div>
-          )}
+          {/* Profesor Input */}
+          <div className="relative">
+            <input
+              type="text"
+              value={
+                professor !== null
+                  ? profesori.find(
+                      (item) => item.id_Profesor === Number(professor)
+                    )?.nume || "Profesor Inexistent"
+                  : ""
+              }
+              readOnly
+              className="w-80 px-4 py-2 bg-white border border-slate-800 rounded shadow ml-60 cursor-not-allowed hover:bg-gray-100"
+              placeholder="Selectează Profesorul"
+            />
+          </div>
+
+          {/* Materie Input */}
+          <div className="relative">
+            <input
+              type="text"
+              value={
+                subject
+                  ? materii.find((item) => item.id_Materie === subject)?.nume ||
+                    ""
+                  : ""
+              }
+              readOnly
+              className="w-80 px-4 py-2 bg-white border border-slate-800 rounded shadow ml-60 cursor-not-allowed hover:bg-gray-100"
+              placeholder="Selectează Materia"
+            />
+          </div>
+
+          {/* Data examenului */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsCalendarOpen((prev) => !prev)}
+              className="w-80 px-4 py-2 bg-white border border-slate-800 rounded flex justify-between items-center ml-60"
+            >
+              {date ? date.format("DD/MM/YYYY") : "Selectează Data"}
+              <span className="ml-2">&#9660;</span>
+            </button>
+            {isCalendarOpen && (
+              <div className="absolute z-10 mt-2 left-0 ml-60 w-80 bg-white shadow-md">
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DateCalendar
+                    value={date}
+                    onChange={handleDateChange}
+                    shouldDisableDate={(date) => date.isBefore(dayjs(), "day")}
+                  />
+                </LocalizationProvider>
+              </div>
+            )}
+          </div>
         </div>
 
         <button
           type="submit"
-          className="self-center px-6 py-2 bg-blue-600 text-white rounded-lg shadow"
+          className="self-center px-6 py-2  ml-14 bg-blue-950 text-white rounded-lg shadow"
         >
           Salvează Modificările
         </button>
       </form>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={800}
+        onClose={handleSnackbarClose} // Apelează callback-ul pentru redirecționare
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </main>
   );
 }

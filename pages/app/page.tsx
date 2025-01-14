@@ -33,6 +33,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 export default function Home() {
   const [examDetails, setExamDetails] = React.useState<any[]>([]);
   const [faculties, setFaculties] = React.useState<any[]>([]);
+  const [specializari, setSpecializari] = React.useState<any[]>([]);
   const [professors, setProfessors] = React.useState<any[]>([]);
   const [subjects, setSubjects] = React.useState<any[]>([]);
   const [groups, setGroups] = React.useState<any[]>([]);
@@ -46,13 +47,15 @@ export default function Home() {
         const [
           examsRes,
           facultiesRes,
+          specializariRes,
           professorsRes,
           groupsRes,
           subjectsRes,
           roomsRes,
         ] = await Promise.all([
           fetch("http://127.0.0.1:8000/examene/examene/"), // Exam data
-          fetch("http://127.0.0.1:8000/facultati/"), // Faculties
+          fetch("http://127.0.0.1:8000/facultati/"),
+          fetch("http://127.0.0.1:8000/specializare/"),
           fetch("http://127.0.0.1:8000/profesori/profesori/"),
           fetch("http://127.0.0.1:8000/grupe/grupe/"), // Professors
           fetch("http://127.0.0.1:8000/materii/materii/"), // Subjects
@@ -62,6 +65,7 @@ export default function Home() {
         if (
           examsRes.ok &&
           facultiesRes.ok &&
+          specializariRes.ok &&
           professorsRes.ok &&
           groupsRes &&
           subjectsRes.ok &&
@@ -69,6 +73,7 @@ export default function Home() {
         ) {
           const examsData = await examsRes.json();
           const facultiesData = await facultiesRes.json();
+          const specializariData = await specializariRes.json();
           const professorsData = await professorsRes.json();
           const groupsData = await groupsRes.json();
           const subjectsData = await subjectsRes.json();
@@ -77,6 +82,7 @@ export default function Home() {
           // Update state with the fetched data
           setExamDetails(examsData);
           setFaculties(facultiesData);
+          setSpecializari(specializariData);
           setProfessors(professorsData);
           setGroups(groupsData);
           setSubjects(subjectsData);
@@ -161,28 +167,31 @@ export default function Home() {
         >
           <TableHead>
             <TableRow>
-              <StyledTableCell style={{ width: "12.28%" }} align="center">
+              <StyledTableCell style={{ width: "11%" }} align="center">
                 Facultate
               </StyledTableCell>
-              <StyledTableCell style={{ width: "12.28%" }} align="center">
+              <StyledTableCell style={{ width: "11%" }} align="center">
+                Specializare
+              </StyledTableCell>
+              <StyledTableCell style={{ width: "11%" }} align="center">
                 Profesor
               </StyledTableCell>
-              <StyledTableCell style={{ width: "12.28%" }} align="center">
+              <StyledTableCell style={{ width: "11%" }} align="center">
                 Materie
               </StyledTableCell>
-              <StyledTableCell style={{ width: "12.28%" }} align="center">
+              <StyledTableCell style={{ width: "11%" }} align="center">
                 Grupa
               </StyledTableCell>
-              <StyledTableCell style={{ width: "12.28%" }} align="center">
+              <StyledTableCell style={{ width: "11%" }} align="center">
                 Asistent
               </StyledTableCell>
-              <StyledTableCell style={{ width: "12.28%" }} align="center">
+              <StyledTableCell style={{ width: "11%" }} align="center">
                 Data examen
               </StyledTableCell>
-              <StyledTableCell style={{ width: "12.28%" }} align="center">
+              <StyledTableCell style={{ width: "11%" }} align="center">
                 Sala
               </StyledTableCell>
-              <StyledTableCell style={{ width: "12.28%" }} align="center">
+              <StyledTableCell style={{ width: "11%" }} align="center">
                 Ora
               </StyledTableCell>
             </TableRow>
@@ -197,6 +206,13 @@ export default function Home() {
                   <StyledTableRow key={row.id_Examen}>
                     <StyledTableCell component="th" scope="row" align="center">
                       {getNameById(row.id_Facultate, faculties, "id_Facultate")}
+                    </StyledTableCell>
+                    <StyledTableCell component="th" scope="row" align="center">
+                      {getNameById(
+                        row.id_Specializare,
+                        specializari,
+                        "id_Specializare"
+                      )}
                     </StyledTableCell>
                     <StyledTableCell align="center">
                       {getNameById(row.id_Profesor, professors, "id_Profesor")}
@@ -238,7 +254,7 @@ export default function Home() {
               })
             ) : (
               <StyledTableRow>
-                <StyledTableCell colSpan={8} align="center">
+                <StyledTableCell colSpan={9} align="center">
                   Nu sunt examene programate.
                 </StyledTableCell>
               </StyledTableRow>

@@ -71,4 +71,8 @@
       background-color: #f9f9f9;
     }
   }
+  .MuiSnackbar-root {
+    z-index: 1500; /* Asigură-te că este deasupra altor elemente */
+  }
+  
   

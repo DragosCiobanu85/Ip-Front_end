@@ -50,6 +50,8 @@ export default function ProgramareExamen() {
   const [selectedSpecializare, setSelectedSpecializare] = useState<
     number | null
   >(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
   const [isProfessorDropdownOpen, setIsProfessorDropdownOpen] = useState(false);
@@ -207,6 +209,7 @@ export default function ProgramareExamen() {
 
   const handleSubjectSelection = async (id_Materie: number, nume: string) => {
     setSubject(id_Materie);
+    setProfessor(null);
     setIsSubjectDropdownOpen(false);
     fetchProfesor(id_Materie);
   };
@@ -244,7 +247,8 @@ export default function ProgramareExamen() {
     event.preventDefault();
 
     if (!subject || !date || !professor || !faculty) {
-      alert("Te rugăm să completezi toate câmpurile.");
+      setSnackbarMessage("Te rugăm să completezi toate câmpurile.");
+      setSnackbarOpen(true); // Show Snackbar for missing fields
       return;
     }
 
@@ -252,10 +256,12 @@ export default function ProgramareExamen() {
       id_Materie: subject,
       id_Profesor: professor,
       id_Facultate: faculty,
+      id_Grupa: selectedGrupa,
+      id_Specializare: selectedSpecializare,
       data: date.format("YYYY-MM-DD"),
     };
 
-    console.log("Date trimise catre backend:", newExam);
+    console.log("Date trimise către backend:", newExam);
 
     try {
       const response = await fetch("http://127.0.0.1:8000/cereri/cereri/", {
@@ -269,16 +275,19 @@ export default function ProgramareExamen() {
 
       if (!response.ok) {
         if (response.status === 400) {
-          const errorData = await response.json(); // Preia răspunsul ca JSON
+          const errorData = await response.json();
           const errorMessage = errorData.detail;
-          setErrorMessage(errorMessage); // Setează mesajul de eroare în Snackbar
-          return; // Opriți execuția și nu aruncați eroarea mai departe
+          setErrorMessage(errorMessage);
+          return;
         }
         throw new Error("Eroare necunoscută la crearea cererii.");
       }
 
-      alert("Cererea de examen a fost trimisă cu succes!");
-      router.push("/studentpage");
+      setSnackbarMessage("Cererea de examen a fost trimisă cu succes!");
+      setSnackbarOpen(true);
+      setTimeout(() => {
+        router.push("/studentpage");
+      }, 650);
     } catch (error) {
       console.error("Eroare la comunicarea cu serverul:", error);
     }
@@ -305,23 +314,21 @@ export default function ProgramareExamen() {
         className="flex flex-col gap-10 px-20 mt-20 w-full text-2xl font-medium text-blue-950 max-md:px-5 max-md:mt-10"
         onSubmit={handleSubmit}
       >
-        {/* Facultate */}
-        <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Facultate Dropdown */}
           <div className="relative">
             <button
               type="button"
-              onClick={() =>
-                setIsFacultyDropdownOpen((prevState) => !prevState)
-              }
-              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
+              onClick={() => setIsFacultyDropdownOpen((prev) => !prev)}
+              className="w-80 px-4 py-2 bg-white border border-slate-800 rounded shadow flex justify-between items-center ml-60"
             >
               {faculty !== null
                 ? facultati.find((item) => item.id_Facultate === faculty)?.nume
                 : "Selectează Facultatea"}
+              <span className="ml-2">&#9660;</span>
             </button>
-
             {isFacultyDropdownOpen && (
-              <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
+              <ul className="absolute left-0 ml-60 w-80 bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
                 {facultati.map((option) => (
                   <li
                     key={option.id_Facultate}
@@ -336,27 +343,58 @@ export default function ProgramareExamen() {
               </ul>
             )}
           </div>
-        </div>
 
-        {/* Specializare */}
-        <div className="flex flex-col gap-6">
+          {/* Materie Dropdown */}
           <div className="relative">
             <button
               type="button"
-              onClick={() =>
-                setIsSpecializationDropdownOpen((prevState) => !prevState)
-              }
-              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
+              onClick={() => setIsSubjectDropdownOpen((prev) => !prev)}
+              className={`w-80 px-4 py-2 bg-white border border-slate-800 rounded shadow flex justify-between items-center ml-60 ${
+                selectedGrupa ? "" : "cursor-not-allowed opacity-50"
+              }`}
+              disabled={!selectedGrupa} // Disabled dacă Grupa nu este completată
+            >
+              {subject !== null
+                ? materii.find((item) => item.id_Materie === subject)?.nume
+                : "Selectează Materia"}
+              <span className="ml-2">&#9660;</span>
+            </button>
+            {isSubjectDropdownOpen && selectedGrupa && (
+              <ul className="absolute left-0 ml-60 w-80 bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
+                {materii.map((option) => (
+                  <li
+                    key={option.id_Materie}
+                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                    onClick={() =>
+                      handleSubjectSelection(option.id_Materie, option.nume)
+                    }
+                  >
+                    {option.nume}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Specializare Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsSpecializationDropdownOpen((prev) => !prev)}
+              className={`w-81 px-4 py-2 bg-white border border-slate-800 rounded shadow flex justify-between items-center ml-60 ${
+                faculty ? "" : "cursor-not-allowed opacity-50"
+              }`}
+              disabled={!faculty} // Disabled dacă Facultatea nu este completată
             >
               {selectedSpecializare !== null
                 ? specializari.find(
                     (item) => item.id_Specializare === selectedSpecializare
                   )?.nume
                 : "Selectează Specializarea"}
+              <span className="ml-2">&#9660;</span>
             </button>
-
-            {isSpecializationDropdownOpen && (
-              <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
+            {isSpecializationDropdownOpen && faculty && (
+              <ul className="absolute left-0 ml-60 w-81 bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
                 {specializari.map((option) => (
                   <li
                     key={option.id_Specializare}
@@ -374,85 +412,24 @@ export default function ProgramareExamen() {
               </ul>
             )}
           </div>
-        </div>
 
-        <div className="flex flex-col gap-6">
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsGroupDropdownOpen((prevState) => !prevState)}
-              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-            >
-              {selectedGrupa !== null
-                ? grupe.find((item) => item.id_Grupa === selectedGrupa)?.nume
-                : "Selectează Grupa"}
-            </button>
-
-            {isGroupDropdownOpen && (
-              <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
-                {grupe.map((option) => (
-                  <li
-                    key={option.id_Grupa}
-                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                    onClick={() =>
-                      handleStudentGrupa(option.id_Grupa, option.nume)
-                    }
-                  >
-                    {option.nume}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        {/* Materie */}
-        <div className="flex flex-col gap-6">
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() =>
-                setIsSubjectDropdownOpen((prevState) => !prevState)
-              }
-              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-            >
-              {subject !== null
-                ? materii.find((item) => item.id_Materie === subject)?.nume
-                : "Selectează Materia"}
-            </button>
-
-            {isSubjectDropdownOpen && (
-              <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
-                {materii.map((option) => (
-                  <li
-                    key={option.id_Materie}
-                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                    onClick={() =>
-                      handleSubjectSelection(option.id_Materie, option.nume)
-                    }
-                  >
-                    {option.nume}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        {/* Profesor */}
-        <div className="flex flex-col gap-6">
+          {/* Profesor Dropdown */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setIsProfessorDropdownOpen((prev) => !prev)}
-              className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
+              className={`w-80 px-4 py-2 bg-white border border-slate-800 rounded shadow flex justify-between items-center ml-60 ${
+                subject ? "" : "cursor-not-allowed opacity-50"
+              }`}
+              disabled={!subject} // Disabled dacă Materia nu este completată
             >
               {professor !== null
                 ? profesori.find((item) => item.id_Profesor === professor)?.nume
                 : "Selectează Profesorul"}
+              <span className="ml-2">&#9660;</span>
             </button>
-            {isProfessorDropdownOpen && profesori.length > 0 && (
-              <ul className="absolute w-full bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
+            {isProfessorDropdownOpen && subject && (
+              <ul className="absolute left-0 ml-60 w-80 bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
                 {profesori.map((option) => (
                   <li
                     key={option.id_Profesor}
@@ -467,34 +444,70 @@ export default function ProgramareExamen() {
               </ul>
             )}
           </div>
-        </div>
 
-        {/* Calendar */}
-        <div className="relative mt-4">
-          <button
-            type="button"
-            onClick={() => setIsCalendarOpen((prev) => !prev)}
-            className="w-full px-4 py-2 bg-white border border-slate-800 rounded shadow"
-          >
-            {date ? date.format("DD/MM/YYYY") : "Selectează Data"}
-          </button>
-          {isCalendarOpen && (
-            <div className="absolute z-10 mt-2 w-full bg-white shadow-md">
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateCalendar
-                  value={date}
-                  onChange={handleDateChange}
-                  shouldDisableDate={(date) => date.isBefore(dayjs(), "day")}
-                />
-              </LocalizationProvider>
-            </div>
-          )}
+          {/* Grupa Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsGroupDropdownOpen((prev) => !prev)}
+              className={`w-80 px-4 py-2 bg-white border border-slate-800 rounded shadow flex justify-between items-center ml-60 ${
+                selectedSpecializare ? "" : "cursor-not-allowed opacity-50"
+              }`}
+              disabled={!selectedSpecializare} // Disabled dacă Specializarea nu este completată
+            >
+              {selectedGrupa !== null
+                ? grupe.find((item) => item.id_Grupa === selectedGrupa)?.nume
+                : "Selectează Grupa"}
+              <span className="ml-2">&#9660;</span>
+            </button>
+            {isGroupDropdownOpen && selectedSpecializare && (
+              <ul className="absolute left-0 ml-60 w-80 bg-white border border-slate-800 rounded shadow z-10 max-h-48 overflow-auto">
+                {grupe.map((option) => (
+                  <li
+                    key={option.id_Grupa}
+                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                    onClick={() =>
+                      handleStudentGrupa(option.id_Grupa, option.nume)
+                    }
+                  >
+                    {option.nume}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Calendar */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsCalendarOpen((prev) => !prev)}
+              className={`w-80 px-4 py-2 bg-white border border-slate-800 rounded shadow flex justify-between items-center ml-60 ${
+                professor ? "" : "cursor-not-allowed opacity-50"
+              }`}
+              disabled={!professor} // Disabled dacă Profesorul nu este completat
+            >
+              {date ? date.format("DD/MM/YYYY") : "Selectează Data"}
+              <span className="ml-2">&#9660;</span>
+            </button>
+            {isCalendarOpen && professor && (
+              <div className="absolute z-10 mt-2 left-0 ml-60 w-80 bg-white shadow-md">
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DateCalendar
+                    value={date}
+                    onChange={handleDateChange}
+                    shouldDisableDate={(date) => date.isBefore(dayjs(), "day")}
+                  />
+                </LocalizationProvider>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Submit Button */}
         <button
           type="submit"
-          className="self-center w-60 py-3 mt-5 text-white bg-blue-950 rounded"
+          className="self-center w-60 py-3 mt-16 ml-20 text-white bg-blue-950 rounded"
         >
           Trimite cererea
         </button>
@@ -509,6 +522,21 @@ export default function ProgramareExamen() {
       >
         <Alert severity="error" sx={{ width: "100%" }}>
           {errorMessage}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={700}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
         </Alert>
       </Snackbar>
     </main>

@@ -61,6 +61,7 @@ export default function StudentAccount() {
   const [faculties, setFaculties] = useState<any[]>([]);
   const [professors, setProfessors] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
+  const [specializari, setSpecializari] = useState<any[]>([]);
   const [status, setStatus] = useState<any[]>([]);
   const router = useRouter();
 
@@ -130,17 +131,22 @@ export default function StudentAccount() {
           "http://127.0.0.1:8000/materii/materii/"
         );
         const statusResponse = await fetch("http://127.0.0.1:8000/status/");
+        const specializareResponse = await fetch(
+          "http://127.0.0.1:8000/specializare/"
+        );
 
         if (
           facultyResponse.ok &&
           professorResponse.ok &&
           subjectResponse.ok &&
-          statusResponse.ok
+          statusResponse.ok &&
+          specializareResponse.ok
         ) {
           const facultyData = await facultyResponse.json();
           const professorData = await professorResponse.json();
           const subjectData = await subjectResponse.json();
           const statusData = await statusResponse.json();
+          const specializareData = await specializareResponse.json();
 
           // Debugging logs
           console.log("Faculties:", facultyData);
@@ -151,6 +157,7 @@ export default function StudentAccount() {
           setProfessors(professorData);
           setSubjects(subjectData);
           setStatus(statusData);
+          setSpecializari(specializareData);
         } else {
           console.error("Failed to fetch names");
         }
@@ -165,7 +172,7 @@ export default function StudentAccount() {
   // Function to handle canceling a request
   const handleCancel = async (id: number) => {
     setExamToDelete(id); // Set the exam to delete before showing the dialog
-    setCancelMessage("Cererea va fi ștearsă! Ești sigur?");
+    setCancelMessage("Cererea va fi anulata! Ești sigur?");
     setOpenDialog(true); // Open the dialog for confirmation
   };
 
@@ -195,6 +202,16 @@ export default function StudentAccount() {
           removeExamFromStudent(examToDelete);
           removeExamFromTeacher(examToDelete);
           setCancelMessage("Cererea a fost anulată!");
+          const updatedRequest = await response.json(); // Așteaptă răspunsul cu cererea actualizată
+
+          // Actualizează întreaga cerere în lista locală
+          setRows((prevRows) =>
+            prevRows.map((row) =>
+              row.id_Cerere === examToDelete
+                ? { ...row, ...updatedRequest } // Înlocuiește întreaga cerere cu cea actualizată
+                : row
+            )
+          );
         } else {
           console.error("Failed to update cererea status");
         }
@@ -270,23 +287,26 @@ export default function StudentAccount() {
         >
           <TableHead>
             <TableRow>
-              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "14%", textAlign: "center" }}>
                 Facultate
               </StyledTableCell>
-              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "17%", textAlign: "center" }}>
+                Specializare
+              </StyledTableCell>
+              <StyledTableCell style={{ width: "14%", textAlign: "center" }}>
                 Profesor
               </StyledTableCell>
-              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "14%", textAlign: "center" }}>
                 Materie
               </StyledTableCell>
-              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "12%", textAlign: "center" }}>
                 Data
               </StyledTableCell>
-              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "13%", textAlign: "center" }}>
                 Status
               </StyledTableCell>
 
-              <StyledTableCell style={{ width: "16.6%", textAlign: "center" }}>
+              <StyledTableCell style={{ width: "15%", textAlign: "center" }}>
                 Acțiune
               </StyledTableCell>
             </TableRow>
@@ -302,6 +322,14 @@ export default function StudentAccount() {
                   style={{ textAlign: "center" }}
                 >
                   {getNameById(row.id_Facultate, faculties, "id_Facultate")}
+                </StyledTableCell>
+
+                <StyledTableCell align="center">
+                  {getNameById(
+                    row.id_Specializare,
+                    specializari,
+                    "id_Specializare"
+                  )}
                 </StyledTableCell>
 
                 {/* Profesor */}

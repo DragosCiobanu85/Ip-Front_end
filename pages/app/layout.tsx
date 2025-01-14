@@ -8,6 +8,7 @@ import HomeIcon1 from "./images/home.png";
 import Sigla from "./images/poza.png";
 import { ExamProvider } from "./context/examcontext";
 import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useRef } from "react";
 
 export default function RootLayout({
   children,
@@ -25,6 +26,28 @@ export default function RootLayout({
     router.push("/"); // Schimbă cu ruta dorită, de exemplu "/login"
   };
 
+  const [opacity, setOpacity] = useState(1);
+  const logoRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (logoRef.current) {
+        const logoHeight = logoRef.current.offsetHeight; // Înălțimea siglei
+        const threshold = logoHeight / 6; // Prag: 1/4 din înălțimea siglei
+        const scrollY = window.scrollY;
+
+        // Calculează opacitatea în funcție de cât de mult s-a dat scroll
+        const newOpacity = Math.max(0, 1 - scrollY / threshold);
+        setOpacity(newOpacity);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   return (
     <html lang="en">
       <body
@@ -37,12 +60,16 @@ export default function RootLayout({
       >
         <ExamProvider>
           <div
+            ref={logoRef}
             style={{
               position: "fixed",
               top: "10%",
               left: "50%",
               transform: "translate(-50%, -50%)",
               zIndex: 1,
+              opacity: opacity, // Aplică opacitatea calculată
+              transition: "opacity 0.1s ease-out", // Tranziție lină
+              pointerEvents: opacity > 0 ? "auto" : "none", // Previne interacțiunile când e invizibilă
             }}
           >
             <Image
@@ -55,7 +82,6 @@ export default function RootLayout({
               }}
             />
           </div>
-
           <header
             style={{
               backgroundColor: "#192041",

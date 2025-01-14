@@ -51,6 +51,7 @@ export default function RequestsTable() {
   const [professors, setProfessors] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
+  const [specializari, setSpecializari] = useState<any[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [groups, setGroups] = useState<any[]>([]);
   const [status, setStatus] = useState<any[]>([]);
@@ -82,6 +83,7 @@ export default function RequestsTable() {
       const [
         requestsRes,
         facultiesRes,
+        specializariRes,
         professorsRes,
         subjectsRes,
         studentsRes,
@@ -94,6 +96,11 @@ export default function RequestsTable() {
           },
         }),
         fetch("http://127.0.0.1:8000/facultati/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+        fetch("http://127.0.0.1:8000/specializare/", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -141,6 +148,14 @@ export default function RequestsTable() {
         setFaculties(facultiesData);
       } else {
         console.error("Eroare la facultăți:", facultiesRes.status);
+      }
+
+      if (specializariRes.ok) {
+        const specializariData = await specializariRes.json();
+        console.log("Facultăți:", specializariData); // Log date facultăți
+        setSpecializari(specializariData);
+      } else {
+        console.error("Eroare la facultăți:", specializariRes.status);
       }
 
       if (professorsRes.ok) {
@@ -235,6 +250,16 @@ export default function RequestsTable() {
         if (response.ok) {
           // Dacă cererea a fost respinsă cu succes, actualizează UI-ul
           console.log("Cererea a fost respinsă!");
+          const updatedRequest = await response.json(); // Așteaptă răspunsul cu cererea actualizată
+
+          // Actualizează întreaga cerere în lista locală
+          setRows((prevRows) =>
+            prevRows.map((row) =>
+              row.id_Cerere === requestToDelete
+                ? { ...row, ...updatedRequest } // Înlocuiește întreaga cerere cu cea actualizată
+                : row
+            )
+          );
         } else {
           console.error("Failed to update cererea status to respinsă.");
         }
@@ -278,27 +303,30 @@ export default function RequestsTable() {
           >
             <TableHead>
               <TableRow>
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{ width: "12%" }}>
                   Facultate
                 </StyledTableCell>
+                <StyledTableCell align="center" style={{ width: "12%" }}>
+                  Specializare
+                </StyledTableCell>
 
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{ width: "12%" }}>
                   Studentul care a facut cererea
                 </StyledTableCell>
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{ width: "12%" }}>
                   Grupa din care face parte studentul
                 </StyledTableCell>
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{ width: "12%" }}>
                   Materie
                 </StyledTableCell>
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{ width: "12%" }}>
                   Data
                 </StyledTableCell>
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{ width: "12%" }}>
                   Status
                 </StyledTableCell>
 
-                <StyledTableCell align="center" style={{ width: "14%" }}>
+                <StyledTableCell align="center" style={{ width: "12%" }}>
                   Acțiuni
                 </StyledTableCell>
               </TableRow>
@@ -311,6 +339,13 @@ export default function RequestsTable() {
                   <StyledTableRow key={row.id_Cerere}>
                     <StyledTableCell align="center">
                       {getNameById(row.id_Facultate, faculties, "id_Facultate")}
+                    </StyledTableCell>
+                    <StyledTableCell align="center">
+                      {getNameById(
+                        row.id_Specializare,
+                        specializari,
+                        "id_Specializare"
+                      )}
                     </StyledTableCell>
                     <StyledTableCell align="center">
                       {getNameById(row.id_Student, students, "id_Student")}
@@ -353,7 +388,7 @@ export default function RequestsTable() {
                               color="error"
                               onClick={() => handleCancel(row.id_Cerere)}
                             >
-                              Anulează
+                              Respinge
                             </Button>
                           </div>
                         )}
@@ -368,10 +403,18 @@ export default function RequestsTable() {
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle>Confirmare ștergere</DialogTitle>
-        <DialogContent>Ești sigur că dorești să anulezi cererea?</DialogContent>
+        <DialogContent>
+          Sunteti sigur că doriti să respingeti cererea?
+        </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Anulează</Button>
-          <Button onClick={confirmDelete} color="secondary">
+          <Button onClick={() => setOpenDialog(false)}>Inchide</Button>
+          <Button
+            onClick={confirmDelete}
+            sx={{
+              backgroundColor: "red",
+              color: "#fff",
+            }}
+          >
             Confirmă
           </Button>
         </DialogActions>
