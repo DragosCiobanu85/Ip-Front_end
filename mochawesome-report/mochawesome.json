@@ -1,0 +1,138 @@
+{
+  "stats": {
+    "suites": 1,
+    "tests": 3,
+    "passes": 3,
+    "pending": 0,
+    "failures": 0,
+    "start": "2025-01-14T23:58:16.282Z",
+    "end": "2025-01-14T23:58:34.149Z",
+    "duration": 17867,
+    "testsRegistered": 3,
+    "passPercent": 100,
+    "pendingPercent": 0,
+    "other": 0,
+    "hasOther": false,
+    "skipped": 0,
+    "hasSkipped": false
+  },
+  "results": [
+    {
+      "uuid": "0290f044-a608-41b0-867c-7b4ce292bec9",
+      "title": "",
+      "fullFile": "cypress\\e2e\\functionare_total.cy.js",
+      "file": "cypress\\e2e\\functionare_total.cy.js",
+      "beforeHooks": [],
+      "afterHooks": [],
+      "tests": [],
+      "suites": [
+        {
+          "uuid": "2f26d11e-b10a-4790-b58b-ad1fb3850002",
+          "title": "Security Tests for Authentication",
+          "fullFile": "",
+          "file": "",
+          "beforeHooks": [],
+          "afterHooks": [],
+          "tests": [
+            {
+              "title": "Dropdowns and Calendar should load and interact correctly",
+              "fullTitle": "Security Tests for Authentication Dropdowns and Calendar should load and interact correctly",
+              "timedOut": null,
+              "duration": 6868,
+              "state": "passed",
+              "speed": "medium",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "cy.visit(\"http://localhost:3000/login\");\nconst username1 = \"lavinia@student.usv.ro\";\nconst password1 = \"Parola12\";\n// Pasul 2: Studentul se autentifică\ncy.get(\"input[id='email']\").clear().type(username1);\ncy.get(\"input[id='outlined-basic']\").clear().type(password1);\ncy.get(\"button[type='submit']\").click();\n// Verifică dacă studentul este autentificat\ncy.url().should(\"include\", \"/studentpage\");\n// După logare, apasă butonul 'Programare examen'\ncy.contains(\"Programare examen\").should(\"be.visible\").click(); // Căutăm butonul cu textul 'Programare examen'\n// Verificăm dacă suntem redirecționați corect după ce apasăm pe buton\ncy.url().should(\"include\", \"/examen\"); // Verifică dacă pagina este schimbată\n// Pasul 3: Completarea formularului de programare a examenului\ncy.contains(\"Selectează Facultatea\").click(); // Folosește textul corect pentru Facultatea\ncy.get(\"ul li\").first().click(); // Selectează prima opțiune Facultatea\n// Selectează Specializarea\ncy.contains(\"Selectează Specializarea\").click();\ncy.get(\"ul li\").first().click(); // Selectează prima opțiune Specializarea\n// Selectează Grupa\ncy.contains(\"Selectează Grupa\").click();\ncy.get(\"ul li\").first().click(); // Selectează prima opțiune Grupa\n// Selectează Materia\ncy.contains(\"Selectează Materia\").click();\ncy.get(\"ul li\").first().click(); // Selectează prima opțiune Materia\n// Selectează Profesorul\ncy.contains(\"Selectează Profesorul\").click();\ncy.get(\"ul li\").first().click(); // Selectează prima opțiune Profesorul\n// Selectează Data\ncy.contains(\"Selectează Data\").click();\ncy.get(\"[role='gridcell']\").contains(\"22\").click(); // Selectează o dată\n// Trimite cererea pentru aprobare\ncy.get(\"button[type='submit']\").click();",
+              "err": {},
+              "uuid": "4b61acbe-81a7-4782-ad46-d0fb6b5dfa6d",
+              "parentUUID": "2f26d11e-b10a-4790-b58b-ad1fb3850002",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Profesorul se autentifică și aprobă cererea de examen",
+              "fullTitle": "Security Tests for Authentication Profesorul se autentifică și aprobă cererea de examen",
+              "timedOut": null,
+              "duration": 6359,
+              "state": "passed",
+              "speed": "medium",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "// Pasul 4: Profesorul se autentifică\ncy.visit(\"http://localhost:3000/login\");\nconst username2 = \"pop@usm.ro\";\nconst password2 = \"Parola12\";\ncy.get(\"input[id='email']\").clear().type(username2);\ncy.get(\"input[id='outlined-basic']\").clear().type(password2);\ncy.get(\"button[type='submit']\").click();\n// Verifică că profesorul este pe pagina corectă\ncy.url().should(\"include\", \"/teacherpage\");\n// Pasul 5: Profesorul vizualizează cererea de examen\ncy.wait(2000); // Wait for 2 seconds\n// Verifică dacă butonul \"Acceptă\" este prezent în secțiunea Actiuni\ncy.contains(\"Acceptă\").should(\"be.visible\");\n// Profesorul aprobă cererea\ncy.contains(\"Acceptă\").first().click(); // Căutăm butonul \"Acceptă\" și îl click-uim pe primul din listă\ncy.url().should(\"include\", \"/examenprofesor\");\n// Pasul 3: Completarea formularului de programare a examenului\n// Selectează Asistent de profesor\ncy.get(\"select\").eq(0).select(4); // Selectează prima opțiune validă din lista Asistent (indexul 1)\n// Selectează Sala\ncy.get(\"select\").eq(1).select(1); // Selectează prima opțiune validă din lista Sala (indexul 1)\n// Selectează Ora\ncy.get(\"select\").eq(2).select(1); // Selectează prima opțiune validă din lista Ora (indexul 1)\n// Trimite cererea pentru aprobare\ncy.get(\"button[type='submit']\").click();",
+              "err": {},
+              "uuid": "31e6c93e-95ba-4a41-a3b1-5e3a95f182e5",
+              "parentUUID": "2f26d11e-b10a-4790-b58b-ad1fb3850002",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "Check the status of the request",
+              "fullTitle": "Security Tests for Authentication Check the status of the request",
+              "timedOut": null,
+              "duration": 2684,
+              "state": "passed",
+              "speed": "fast",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "cy.visit(\"http://localhost:3000/login\");\nconst username1 = \"lavinia@student.usv.ro\";\nconst password1 = \"Parola12\";\n// Pasul 2: Studentul se autentifică\ncy.get(\"input[id='email']\").clear().type(username1);\ncy.get(\"input[id='outlined-basic']\").clear().type(password1);\ncy.get(\"button[type='submit']\").click();\n// Verifică dacă studentul este autentificat\ncy.url().should(\"include\", \"/studentpage\");\ncy.contains(\"acceptata\").should(\"be.visible\");",
+              "err": {},
+              "uuid": "2ce0a844-c311-461c-900f-e32588943ded",
+              "parentUUID": "2f26d11e-b10a-4790-b58b-ad1fb3850002",
+              "isHook": false,
+              "skipped": false
+            }
+          ],
+          "suites": [],
+          "passes": [
+            "4b61acbe-81a7-4782-ad46-d0fb6b5dfa6d",
+            "31e6c93e-95ba-4a41-a3b1-5e3a95f182e5",
+            "2ce0a844-c311-461c-900f-e32588943ded"
+          ],
+          "failures": [],
+          "pending": [],
+          "skipped": [],
+          "duration": 15911,
+          "root": false,
+          "rootEmpty": false,
+          "_timeout": 2000
+        }
+      ],
+      "passes": [],
+      "failures": [],
+      "pending": [],
+      "skipped": [],
+      "duration": 0,
+      "root": true,
+      "rootEmpty": true,
+      "_timeout": 2000
+    }
+  ],
+  "meta": {
+    "mocha": {
+      "version": "7.0.1"
+    },
+    "mochawesome": {
+      "options": {
+        "quiet": false,
+        "reportFilename": "mochawesome",
+        "saveHtml": true,
+        "saveJson": true,
+        "consoleReporter": "spec",
+        "useInlineDiffs": false,
+        "code": true
+      },
+      "version": "7.1.3"
+    },
+    "marge": {
+      "options": null,
+      "version": "6.2.0"
+    }
+  }
+}
