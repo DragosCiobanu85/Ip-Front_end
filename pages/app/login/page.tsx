@@ -1,12 +1,12 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import {useState} from "react";
+import {useRouter} from "next/navigation";
 import * as React from "react";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
-import { jwtDecode } from "jwt-decode";
+import {jwtDecode} from "jwt-decode";
 
 // Definirea tipului pentru payload-ul token-ului
 interface CustomJwtPayload {
@@ -100,8 +100,7 @@ export default function Login() {
           justifyContent: "center",
           alignItems: "center",
           textAlign: "center",
-        }}
-      >
+        }}>
         <h1
           style={{
             fontSize: "2rem",
@@ -109,8 +108,7 @@ export default function Login() {
             color: "#333",
             marginTop: "80px",
             marginBottom: "18px",
-          }}
-        >
+          }}>
           Programare examene
         </h1>
         <h1
@@ -120,8 +118,7 @@ export default function Login() {
             color: "#333",
             marginTop: "6px",
             marginBottom: "0px",
-          }}
-        >
+          }}>
           Sesiunea ordinara nr. 1
         </h1>
         <h1
@@ -131,8 +128,7 @@ export default function Login() {
             color: "#333",
 
             marginTop: "2px",
-          }}
-        >
+          }}>
           An universitar 2024-2025
         </h1>
       </div>
@@ -145,8 +141,7 @@ export default function Login() {
             justifyContent: "center",
             alignItems: "center",
             textAlign: "center",
-          }}
-        >
+          }}>
           <TextField
             id="email"
             label="Email"
@@ -157,7 +152,7 @@ export default function Login() {
             required
             error={!!emailError}
             helperText={emailError}
-            style={{ marginBottom: "20px", marginTop: "40px", width: "300px" }}
+            style={{marginBottom: "20px", marginTop: "40px", width: "300px"}}
             sx={{
               "& .MuiOutlinedInput-root": {
                 "& fieldset": {
@@ -180,8 +175,7 @@ export default function Login() {
             justifyContent: "center",
             alignItems: "center",
             textAlign: "center",
-          }}
-        >
+          }}>
           <TextField
             id="outlined-basic"
             label="Password"
@@ -205,7 +199,7 @@ export default function Login() {
                 },
               },
             }}
-            style={{ width: "300px", marginBottom: "17px" }}
+            style={{width: "300px", marginBottom: "17px"}}
           />
         </div>
         <Button
@@ -221,8 +215,7 @@ export default function Login() {
             marginTop: "20px",
             backgroundColor: "#192041",
             width: "300px",
-          }}
-        >
+          }}>
           Login
         </Button>
       </form>
